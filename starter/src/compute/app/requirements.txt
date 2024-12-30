@@ -1,0 +1,21 @@
+# FLASK
+Flask
+flask-cors
+
+#DB23ai
+oracledb
+
+# OCI
+oci
+
+# HTTP Client
+requests
+
+# Langchain
+langchain
+langchain_community
+langchain_chroma
+langchain_postgres
+
+# Sitemap
+pdfkit
