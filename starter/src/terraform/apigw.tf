@@ -21,6 +21,7 @@ resource "oci_apigateway_api" "starter_api" {
 locals {
   apigw_ocid = try(oci_apigateway_gateway.starter_apigw.id, "")
   apigw_ip   = try(oci_apigateway_gateway.starter_apigw.ip_addresses[0].ip_address,"")
+  db_root_url = replace(data.oci_database_autonomous_database.starter_atp.connection_urls[0].apex_url, "/ords/apex", "" )
 }   
 
 // API Management - Tags
