@@ -44,9 +44,15 @@ ssh -o StrictHostKeyChecking=no -i $TF_VAR_ssh_private_path opc@$BASTION_IP "exp
 
 # oci os object bulk-upload -bn psql-public-bucket -ns $TF_VAR_namespace --overwrite --src-dir ../sample_files
 
+echo "-----------------------------------------------------------------------"
+echo "APEX login:"
 echo
-echo "-- SEARCH_URL -------"
-echo "https://${APIGW_HOSTNAME}/app/"
-echo "http://$BASTION_IP/"
+echo "APEX Workspace"
+echo "https://${APIGW_HOSTNAME}/ords/_/landing"
+echo "  Workspace: APEX_APP"
+echo "  User: APEX_APP"
+echo "  Password: $TF_VAR_db_password"
 echo
-echo "Please wait 5 mins. The server is starting." 
+echo "APEX APP"
+echo "https://${APIGW_HOSTNAME}/ords/r/apex_app/apex_app/"
+echo "  User: APEX_APP / $TF_VAR_db_password"

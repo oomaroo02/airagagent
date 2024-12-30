@@ -10,7 +10,6 @@ ssh_key_starter.pub
 target
 helper
 variables.sh
-env.sh
 output
 orig
 option/src/app/dotnet/src/obj
