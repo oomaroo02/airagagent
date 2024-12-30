@@ -12,6 +12,7 @@ helper
 variables.sh
 env.sh
 output
+orig
 option/src/app/dotnet/src/obj
 option/src/app/dotnet_mysql/src/obj
 option/src/app/java_helidon/target
