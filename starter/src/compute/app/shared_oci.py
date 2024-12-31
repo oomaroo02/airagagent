@@ -635,7 +635,7 @@ def sitemap(value):
                     if last_char == '/':
                         pdf_path = pdf_path[:-1]
 
-                    pdf_path = pdf_path.replace('/', '___');  
+                    pdf_path = pdf_path.replace('/', '___');
                     pdf_path = pdf_path+'.pdf'
                     log("<sitemap>"+full_uri)
                     pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
