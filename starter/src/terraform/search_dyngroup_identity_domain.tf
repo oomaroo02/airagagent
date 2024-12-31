@@ -32,6 +32,7 @@ resource "oci_identity_policy" "starter_search_policy" {
         "allow dynamic-group ${var.idcs_domain_name}/${var.prefix}-fn-dyngroup to manage objects in compartment id ${local.lz_serv_cmp_ocid}",
         "allow dynamic-group ${var.idcs_domain_name}/${var.prefix}-bastion-dyngroup to manage all-resources in compartment id ${local.lz_serv_cmp_ocid}",
         "allow dynamic-group ${var.idcs_domain_name}/${var.prefix}-bastion-dyngroup to manage stream-family in compartment id ${local.lz_serv_cmp_ocid}",
+        "allow dynamic-group ${var.idcs_domain_name}/${var.prefix}-bastion-dyngroup to manage genai-agent-family in compartment id ${local.lz_serv_cmp_ocid}",
         "allow any-user to manage genai-agent-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
         "allow any-user to read object-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
         "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where ALL { request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}', request.permission = 'PAR_MANAGE' }"
