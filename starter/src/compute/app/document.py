@@ -55,7 +55,7 @@ def insertDocument(value):
        return 
 
     # Upload the GENAI Bucket
-    shared_oci.upload_genai_bucket(value, result["content"])    
+    shared_oci.upload_genai_bucket(value, result["content"],result["path"])    
     log( "</insertDocument>")
 
 ## -- deleteDocument --------------------------------------------------------

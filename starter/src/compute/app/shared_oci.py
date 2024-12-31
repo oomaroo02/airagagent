@@ -742,7 +742,7 @@ def decodeJson(value):
 
 ## -- upload_genai_bucket ------------------------------------------------------------------
 
-def upload_genai_bucket(value, content=None):
+def upload_genai_bucket(value, content=None, path=None):
 
     log( "<upload_genai_bucket>")
     namespace = value["data"]["additionalDetails"]["namespace"]
@@ -751,21 +751,31 @@ def upload_genai_bucket(value, content=None):
     resourceName = value["data"]["resourceName"]
     resourceGenAI = resourceName
 
+    # Set the original URL source (GenAI Agent)
+    if path==None:
+        path = value["data"]["resourceId"]
+    region = os.getenv("TF_VAR_region")
+    customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
+    log( "customized_url_source="+customized_url_source )
+    metadata = {'customized_url_source': customized_url_source}
+
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
     file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
     if not content:
+        contentType = value["contentType"]
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
     else:
+        contentType = "text/html"
         with open(file_name, 'w') as f:
             f.write(content)
         resourceGenAI = resourceGenAI + ".convert.txt"
 
     upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
     part_size = 2 * MEBIBYTE
-    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=part_size)
+    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=part_size, content_type=contentType, metadata=metadata)
     log( "</upload_genai_bucket>")            
 
 ## -- delete_genai_bucket ------------------------------------------------------------------
