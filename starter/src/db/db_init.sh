@@ -14,6 +14,10 @@ create user apex_app identified by "$DB_PASSWORD" default tablespace USERS quota
 /
 grant connect, resource, unlimited tablespace to apex_app;
 /
+EXEC DBMS_CLOUD_ADMIN.ENABLE_RESOURCE_PRINCIPAL('APEX_APP');
+grant execute on DBMS_CLOUD to APEX_APP;
+grant execute on DBMS_CLOUD_AI to APEX_APP;
+/
 begin
     apex_instance_admin.add_workspace(
      p_workspace_id   => null,
