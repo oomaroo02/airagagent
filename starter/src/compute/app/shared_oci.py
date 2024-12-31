@@ -792,14 +792,15 @@ def genai_agent_datasource_ingest():
 
     log( "<genai_agent_datasource_ingest>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    datasourceId = os.getenv("TF_VAR_genai_agent_datasource_ocid")
-    dt = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
+    name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    log( "ingest_job="+name )
     genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
     genai_agent_client.create_data_ingestion_job(
         create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
 		    data_source_id=datasourceId,
 		    compartment_id=compartmentId,
-		    display_name="AUTO_INGESTION_" + dt,
-		    description="AUTO_INGESTION_" + dt
+		    display_name=name,
+		    description=name
         ))
     log( "</genai_agent_datasource_ingest>")             
