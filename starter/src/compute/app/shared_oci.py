@@ -604,6 +604,7 @@ def sitemap(value):
     log( "<sitemap>")
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
+    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     resourceNameWoExt = str(pathlib.Path(resourceName).with_suffix(''))
     prefix="site/"+resourceNameWoExt
@@ -634,22 +635,17 @@ def sitemap(value):
                     if last_char == '/':
                         pdf_path = pdf_path[:-1]
 
-                    pdf_path = pdf_path.replace('/', '___');
-                    # pdf_path = pdf_path.replace('https://', '');
-                    # pdf_path = pdf_path.replace('/', '_');
-                    # pdf_path = pdf_path.replace('.', '_');
-                    # pdf_path = pdf_path.replace('-', '_');
-                    # pdf_path = pdf_path.replace('?', '_');
-                    # pdf_path = pdf_path.replace('=', '_');
-                    # pdf_path = pdf_path.replace('&', '_');                    
+                    pdf_path = pdf_path.replace('/', '___');                 
                     pdf_path = pdf_path+'.pdf'
                     log("<sitemap>"+full_uri)
                     pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
                     log("<sitemap>Created: "+pdf_path)
  
+                    metadata = {'customized_url_source': full_uri}
+
                     # Upload to object storage as "site/"+pdf_path
                     with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
-                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketName, object_name=prefix+"/"+pdf_path, put_object_body=f2)
+                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
                         fileList.append( prefix+"/"+pdf_path )
                     
                 except Exception as e:
@@ -657,14 +653,14 @@ def sitemap(value):
                     log("<sitemap>Exception:" + str(e))
 
         # Check if there are file that are in the folder and not in the sitemap
-        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
         for object_file in response.data.objects:
             f = object_file.name
             if f in fileList:
                 fileList.remove(f)
             else: 
                 log( "<sitemap>Deleting: " + f )
-                os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
+                os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
                 log( "<sitemap>Deleted: " + f )
 
     except FileNotFoundError as e:
