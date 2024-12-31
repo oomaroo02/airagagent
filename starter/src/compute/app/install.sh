@@ -14,6 +14,7 @@ sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
 # Store the config in APEX
+export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('agent_endpoint', '$AGENT_ENDPOINT_OCID');
