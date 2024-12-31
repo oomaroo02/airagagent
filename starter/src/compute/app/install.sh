@@ -14,6 +14,14 @@ sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
 # Store the db_connection in the start.sh
+$HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
+begin
+  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('agent_endpoint', '$AGENT_ENDPOINT_OCID');
+  commit;
+end;
+/
+exit;
+EOF
 
 # Get COMPARTMENT_OCID
 curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/ > /tmp/instance.json

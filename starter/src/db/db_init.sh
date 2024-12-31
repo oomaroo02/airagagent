@@ -63,4 +63,3 @@ EOT
 
 export TNS_ADMIN=$HOME/db
 sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @import_application.sql
-
