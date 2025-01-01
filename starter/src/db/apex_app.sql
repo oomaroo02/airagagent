@@ -33,7 +33,7 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     104
 --   Name:            AI_AGENT_RAG
---   Date and Time:   22:26 Wednesday January 1, 2025
+--   Date and Time:   22:35 Wednesday January 1, 2025
 --   Exported By:     VECTOR
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -18375,6 +18375,7 @@ wwv_flow_imp_page.create_page_da_action(
 '      url := jo.get_Object(''sourceLocation'').get_string(''url'');',
 '      if url like ''https://objectstorage.%'' then',
 '        doc_name := SUBSTR(url,INSTR(url, ''/'', -1)+1);',
+'        insert into ai_agent_rag_citation( session_id, url, page, snippet) values (:P1_SESSION_ID, url, doc_page, ''-'') RETURNING id INTO l_id;',
 '        url_page := APEX_PAGE.GET_URL ( p_page => 2, p_items  => ''P2_CITATION_ID'', p_values => l_id );',
 '      else',
 '        doc_name := url;',
@@ -18394,7 +18395,6 @@ wwv_flow_imp_page.create_page_da_action(
 '        end loop;',
 '        doc_name := doc_name || '')'';',
 '      end if; ',
-'      insert into ai_agent_rag_citation( session_id, url, page, snippet) values (:P1_SESSION_ID, url, doc_page, ''-'') RETURNING id INTO l_id;',
 '      -- http://www.examplesite.com/pls/apex/f?p=123:20:::::P20_ITEM1,P20_ITEM2:Oranges,Apples',
 '      url_page := ''<a href="'' || url_page || ''" target="_blank">'' || doc_name || ''</a>'';',
 '      citation := citation || ''<li>'' || url_page || '' - '' || replace(jo.get_string(''sourceText''), ''"'', '''''''') || ''</li>'';',
