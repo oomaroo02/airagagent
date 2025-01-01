@@ -33,7 +33,7 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     104
 --   Name:            AI_AGENT_RAG
---   Date and Time:   22:22 Wednesday January 1, 2025
+--   Date and Time:   22:26 Wednesday January 1, 2025
 --   Exported By:     VECTOR
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -18367,7 +18367,7 @@ wwv_flow_imp_page.create_page_da_action(
 '  if ja.get_size = 0 then ',
 '     citation := '''';',
 '  else',
-'    citation := ''<div class="citation"> + <spam class="hide"> Citations: <ul>'';',
+'    citation := ''<div class="citation"> + <span class="hide"> Citations: <ul>'';',
 '    FOR indx IN 0 .. ja.get_size - 1',
 '    LOOP',
 '      je := ja.get(indx);',
