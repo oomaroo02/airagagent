@@ -33,16 +33,16 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     104
 --   Name:            AI_AGENT_RAG
---   Date and Time:   13:01 Tuesday December 31, 2024
+--   Date and Time:   22:22 Wednesday January 1, 2025
 --   Exported By:     VECTOR
 --   Flashback:       0
 --   Export Type:     Application Export
 --     Pages:                      4
---       Items:                   11
+--       Items:                   12
 --       Processes:                6
 --       Regions:                  7
 --       Buttons:                  2
---       Dynamic Actions:          2
+--       Dynamic Actions:          5
 --     Shared Components:
 --       Logic:
 --         Build Options:          1
@@ -17975,6 +17975,10 @@ wwv_flow_imp_page.create_page(
 '  display: none;',
 '}',
 '',
+'.citation {',
+'  background-color: #eee;',
+'}',
+'',
 '.citation:hover .hide {',
 '  display: block;',
 '}'))
@@ -18148,8 +18152,11 @@ wwv_flow_imp_page.create_page_plug(
 ,p_title=>'DEBUG'
 ,p_region_template_options=>'#DEFAULT#:t-Region--scrollBody'
 ,p_plug_template=>wwv_flow_imp.id(38122024559737105)
-,p_plug_display_sequence=>50
+,p_plug_display_sequence=>60
 ,p_location=>null
+,p_plug_display_condition_type=>'VAL_OF_ITEM_IN_COND_EQ_COND2'
+,p_plug_display_when_condition=>'P1_SHOW_DEBUG'
+,p_plug_display_when_cond2=>'Y'
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
   'expand_shortcuts', 'N',
   'output_as', 'HTML')).to_clob
@@ -18191,6 +18198,16 @@ wwv_flow_imp_page.create_page_button(
 ,p_button_image_alt=>'Send'
 ,p_warn_on_unsaved_changes=>null
 ,p_grid_new_row=>'Y'
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(15713564139708138)
+,p_name=>'P1_SHOW_DEBUG'
+,p_item_sequence=>50
+,p_prompt=>'Show Debug'
+,p_display_as=>'NATIVE_YES_NO'
+,p_field_template=>wwv_flow_imp.id(38193064589737343)
+,p_item_template_options=>'#DEFAULT#'
+,p_attribute_01=>'Y'
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(24342833962143047)
@@ -18350,13 +18367,19 @@ wwv_flow_imp_page.create_page_da_action(
 '  if ja.get_size = 0 then ',
 '     citation := '''';',
 '  else',
-'    citation := ''<div class="citation">Citations: <ul class="hide">'';',
+'    citation := ''<div class="citation"> + <spam class="hide"> Citations: <ul>'';',
 '    FOR indx IN 0 .. ja.get_size - 1',
 '    LOOP',
 '      je := ja.get(indx);',
 '      jo := treat(je AS JSON_OBJECT_T);',
 '      url := jo.get_Object(''sourceLocation'').get_string(''url'');',
-'      doc_name := SUBSTR(url,INSTR(url, ''/'', -1)+1);',
+'      if url like ''https://objectstorage.%'' then',
+'        doc_name := SUBSTR(url,INSTR(url, ''/'', -1)+1);',
+'        url_page := APEX_PAGE.GET_URL ( p_page => 2, p_items  => ''P2_CITATION_ID'', p_values => l_id );',
+'      else',
+'        doc_name := url;',
+'        url_page := url;',
+'      end if;',
 '      je := jo.get_Array(''pageNumbers'');',
 '      a_page := TREAT (je AS JSON_ARRAY_T);',
 '      if a_page is not null and a_page.get_size > 0 then',
@@ -18373,11 +18396,10 @@ wwv_flow_imp_page.create_page_da_action(
 '      end if; ',
 '      insert into ai_agent_rag_citation( session_id, url, page, snippet) values (:P1_SESSION_ID, url, doc_page, ''-'') RETURNING id INTO l_id;',
 '      -- http://www.examplesite.com/pls/apex/f?p=123:20:::::P20_ITEM1,P20_ITEM2:Oranges,Apples',
-'      url_page := APEX_PAGE.GET_URL ( p_page => 2, p_items  => ''P2_CITATION_ID'', p_values => l_id );',
 '      url_page := ''<a href="'' || url_page || ''" target="_blank">'' || doc_name || ''</a>'';',
 '      citation := citation || ''<li>'' || url_page || '' - '' || replace(jo.get_string(''sourceText''), ''"'', '''''''') || ''</li>'';',
 '    END LOOP;',
-'    citation := citation || ''</ul></span>'';',
+'    citation := citation || ''</ul></span></div>'';',
 '  END IF;',
 '',
 '  -- Insert in chat',
@@ -18432,6 +18454,55 @@ wwv_flow_imp_page.create_page_da_action(
 ,p_action=>'NATIVE_JAVASCRIPT_CODE'
 ,p_attribute_01=>'$("#send-btn").click();'
 );
+wwv_flow_imp_page.create_page_da_event(
+ p_id=>wwv_flow_imp.id(15712255530708125)
+,p_name=>'CLICK_DEBUG_ENABLE'
+,p_event_sequence=>30
+,p_triggering_element_type=>'ITEM'
+,p_triggering_element=>'P1_DEBUG_ENABLE'
+,p_bind_type=>'bind'
+,p_execution_type=>'IMMEDIATE'
+,p_bind_event_type=>'change'
+);
+wwv_flow_imp_page.create_page_da_action(
+ p_id=>wwv_flow_imp.id(15712331995708126)
+,p_event_id=>wwv_flow_imp.id(15712255530708125)
+,p_event_result=>'TRUE'
+,p_action_sequence=>10
+,p_execute_on_page_init=>'Y'
+,p_action=>'NATIVE_SHOW'
+,p_affected_elements_type=>'REGION'
+,p_affected_region_id=>wwv_flow_imp.id(33536860005573562)
+);
+wwv_flow_imp_page.create_page_da_event(
+ p_id=>wwv_flow_imp.id(15712795656708130)
+,p_name=>'Show Debug'
+,p_event_sequence=>40
+,p_triggering_element_type=>'ITEM'
+,p_triggering_element=>'P1_SHOW_DEBUG'
+,p_bind_type=>'bind'
+,p_execution_type=>'IMMEDIATE'
+,p_bind_event_type=>'change'
+);
+wwv_flow_imp_page.create_page_da_event(
+ p_id=>wwv_flow_imp.id(15713680713708139)
+,p_name=>'New'
+,p_event_sequence=>40
+,p_triggering_element_type=>'ITEM'
+,p_triggering_element=>'P1_SHOW_DEBUG'
+,p_bind_type=>'bind'
+,p_execution_type=>'IMMEDIATE'
+,p_bind_event_type=>'change'
+);
+wwv_flow_imp_page.create_page_da_action(
+ p_id=>wwv_flow_imp.id(15713707132708140)
+,p_event_id=>wwv_flow_imp.id(15713680713708139)
+,p_event_result=>'TRUE'
+,p_action_sequence=>10
+,p_execute_on_page_init=>'N'
+,p_action=>'NATIVE_SUBMIT_PAGE'
+,p_attribute_02=>'Y'
+);
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(33537058463573564)
 ,p_process_sequence=>10
@@ -18441,7 +18512,7 @@ wwv_flow_imp_page.create_page_process(
 ,p_process_sql_clob=>wwv_flow_string.join(wwv_flow_t_varchar2(
 'begin',
 '    select value into :P1_AGENT_ENDPOINT_ID from ai_agent_rag_config where key=''agent_endpoint''; ',
-'    :P1_SESSION_ID := ai_agent.ai_agent_session( :P1_AGENT_ENDPOINT_ID );    ',
+'    :P1_SESSION_ID := ai_agent.ai_agent_session( :P1_AGENT_ENDPOINT_ID ); ',
 'end;'))
 ,p_process_clob_language=>'PLSQL'
 ,p_internal_uid=>9198595200436639

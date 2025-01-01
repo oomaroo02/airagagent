@@ -611,6 +611,8 @@ def sitemap(value):
     fileList = []
 
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)            
+
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
     file_name = LOG_DIR+"/"+UNIQUE_ID+".sitemap"
     with open(file_name, 'wb') as f:
@@ -644,9 +646,11 @@ def sitemap(value):
                     metadata = {'customized_url_source': full_uri}
 
                     # Upload to object storage as "site/"+pdf_path
-                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
-                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
-                        fileList.append( prefix+"/"+pdf_path )
+                    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, part_size=2 * MEBIBYTE, content_type='application/pdf', metadata=metadata)
+                    fileList.append( prefix+"/"+pdf_path )
+
+#                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
+#                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
                     
                 except Exception as e:
                     log("<sitemap>Error parsing line: "+line+" in "+resourceName)
@@ -770,8 +774,7 @@ def upload_genai_bucket(value, content=None, path=None):
         resourceGenAI = resourceGenAI + ".convert.txt"
 
     upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-    part_size = 2 * MEBIBYTE
-    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=part_size, content_type=contentType, metadata=metadata)
+    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
     log( "</upload_genai_bucket>")            
 
 ## -- delete_genai_bucket ------------------------------------------------------------------
