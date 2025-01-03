@@ -620,7 +620,7 @@ file_replace_variables() {
   local temp_file=$(mktemp)
 
   while IFS= read -r line; do
-    while [[ $line =~ ##(.*?)## ]]; do
+    while [[ $line =~ "##(.*?)##" ]]; do
       local var_name="${BASH_REMATCH[1]}"
       local var_value="${!var_name}"
 
