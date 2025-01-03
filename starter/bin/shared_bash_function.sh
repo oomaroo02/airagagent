@@ -620,8 +620,8 @@ file_replace_variables() {
   local temp_file=$(mktemp)
 
   while IFS= read -r line; do
-    while [[ $line =~ "##(.*?)##" ]]; do
-      local var_name="${BASH_REMATCH[1]}"
+    while [[ $line =~ (.*)##(.*)##(.*) ]]; do
+      local var_name="${BASH_REMATCH[2]}"
       local var_value="${!var_name}"
 
       if [[ -z "$var_value" ]]; then
@@ -637,3 +637,8 @@ file_replace_variables() {
 
   mv "$temp_file" "$file"
 }
+
+line = "hello##VAR##"
+if [[ $line =~ "(.*)##(.*?)##(.*)" ]]; then
+   echo "hello"
+fi
