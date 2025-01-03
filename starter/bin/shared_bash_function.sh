@@ -629,7 +629,7 @@ file_replace_variables() {
         error_exit
       fi
 
-      line="${line/##${var_name}##/$var_value}"
+      line="${$line/##${var_name}##/$var_value}"
     done
 
     echo "$line" >> "$temp_file"
