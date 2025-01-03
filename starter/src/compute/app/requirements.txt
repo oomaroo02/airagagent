@@ -19,3 +19,6 @@ langchain_postgres
 
 # Sitemap
 pdfkit
+
+# Streamlit
+streamlit

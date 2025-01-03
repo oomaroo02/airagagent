@@ -4,13 +4,18 @@ from oci.generative_ai_inference import GenerativeAiInferenceClient
 from oci.generative_ai_inference.models import CohereChatRequest, \
     OnDemandServingMode, ChatDetails, CohereTool, CohereParameterDefinition, CohereToolResult
 import oci
+import os
 from datetime import datetime, timezone, timedelta
 import streamlit as st
 
-compartment_id = os.getenv("TF_VAR_compartment_ocid")
+# Environment Variables
+compartment_ocid = os.getenv("TF_VAR_compartment_ocid")
+namespace = os.getenv("TF_VAR_namespace")
+prefix = os.getenv("TF_VAR_prefix")
+agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
+bucketName = prefix + "-public-bucket"
 
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-monitoring_client = oci.monitoring.MonitoringClient(config={}, signer=signer)
 
 # Service endpoint for frankfurt region.Change the region if needed.
 endpoint = "https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com"
@@ -19,72 +24,100 @@ generative_ai_inference_client = GenerativeAiInferenceClient(config={},signer=si
                                                              retry_strategy=retry.NoneRetryStrategy(),
                                                              timeout=(10, 240))
 
+# Log
+def log( s ):
+    print( str(s) , flush=True)    
+
 # To format the date
 def date_formatter(day):
     return day.isoformat('T', 'milliseconds') + 'Z'
 
-#To list alarms in a compartment
-def list_alarm(name):
-    list_alarms_response = monitoring_client.list_alarms(
-        compartment_id=compartment_id,
-        display_name=name,
-        lifecycle_state="ACTIVE")
-    return list_alarms_response.data[0].id
+#To list the files in an object storage
+def list_files():
+    os_client = oci.object_storage.ObjectStorageClient(config={}, signer=signer)
+    response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+    list_object = []
+    for object_file in response.data.objects:
+        list_object.append({f"file_name": object_file.name})        
+    return list_object
 
-#To check history of alarms in the last two days.Limited to two days to reduce input data
-def alarm_history(**kwargs):
-    alarm_response = monitoring_client.get_alarm_history(
-        alarm_id=list_alarm(kwargs.get('name')),
-        alarm_historytype="STATE_HISTORY",
-        timestamp_greater_than_or_equal_to=date_formatter(two_days_before),
-        timestamp_less_than=date_formatter(now))
-    alarm_history_data = []
-    for data in alarm_response.data.entries:
-        summary = data.summary.removeprefix('The alarm state is ')
-        alarm_history_data.append({f"State_{str(data.timestamp_triggered)}": summary})
-    return alarm_history_data
+#Get a file in a object_storage
+def get_file(name):
+    os_client = oci.object_storage.ObjectStorageClient(config={}, signer=signer)
+    resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=name)
+    file_name = "/tmp/tools_"+name
+    with open(file_name, 'wb') as f:
+        for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
+            f.write(chunk)
+    with open(file_name, 'r') as f:
+        file_content = f.read()
+    return [ {f"file_content": file_content} ]
 
-#To check alarms in FIRING state in a compartment.
-def alarm_status():
-    alarm_status_response = monitoring_client.list_alarms_status(
-        compartment_id=compartment_id,
-        compartment_id_in_subtree=False,
-        sort_by="severity",
-        sort_order="DESC",
-        status="FIRING")
-    return alarm_status_response.data
-
-
-functions_map = {
-    "alarm_history": alarm_history,
-    "alarm_status": alarm_status
-}
+# Search files
+def search_files(question):
+    genai_agent_runtime_client = oci.generative_ai_agent.GenerativeAiAgentRuntimeClient(config = {}, signer=signer)    
+    resp = genai_agent_runtime_client.create_session(
+        create_session_details=oci.generative_ai_agent.models.CreateSessionDetails(
+		    description='session',
+		    display_name='session'
+        ))
+    log( resp.data )
+    # XX Keep session in cookie ?
+    resp_chat = genai_agent_runtime_client.chat(
+        agent_endpoint_id = agent_endpoint_ocid,
+        chat_details=oci.generative_ai_agent.models.ChatDetails(
+            session_id=resp.data.id,
+		    user_message=question
+        ))
+    log( resp_chat.data )    
+    list_object = []    
+    list_object.append({f"response": resp_chat.data.message})        
+    return list_object
 
 #Tool parameter definition
-alarm_history_param = CohereParameterDefinition()
-alarm_history_param.description = "alarm name"
-alarm_history_param.type = "str"
-alarm_history_param.is_required = True
+get_file_param = CohereParameterDefinition()
+get_file_param.description = "file name"
+get_file_param.type = "str"
+get_file_param.is_required = True
+
+search_files_param = CohereParameterDefinition()
+search_files_param.description = "question"
+search_files_param.type = "str"
+search_files_param.is_required = True
 
 #Tool definitions
-tool3 = CohereTool()
-tool3.name = "alarm_history"
-tool3.description = "The tool will help you find information related to specific alarm history in Oracle Cloud within the specified time"
-tool3.parameter_definitions = {
-    "name": alarm_history_param
+tool1 = CohereTool()
+tool1.name = "get_file"
+tool1.description = "return the content of a file"
+tool1.parameter_definitions = {
+    "name": get_file_param
 }
 
-tool5 = CohereTool()
-tool5.name = "alarm_status"
-tool5.description = "The tool will help you analyze alarms status across services and give you correlated report. This tool will be called during root cause analysis or RCA as well to give insights on alarm"
+tool2 = CohereTool()
+tool2.name = "list_files"
+tool2.description = "list the files in object storage"
+
+tool3 = CohereTool()
+tool3.name = "search_files"
+tool3.description = "search the files for content"
+tool3.parameter_definitions = {
+    "question": search_files_param
+}
 
 #list of tools
-tools = [tool3, tool5]
+tools = [tool1, tool2, tool3]
+
+functions_map = {
+    "list_files": list_files,
+    "get_file": get_file,
+    "search_files": search_files    
+}
+
 
 # streamlit
 st.title('Cohere Tools with OCI GenAI')
 
-user_input = st.chat_input("Enter your observability query in plain text:")
+user_input = st.chat_input("Enter your question in plain text:")
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
@@ -104,7 +137,7 @@ if user_input:
     def ai_response():
         chat_detail = ChatDetails()
         chat_detail.serving_mode = OnDemandServingMode(model_id="cohere.command-r-plus-08-2024")
-        chat_detail.compartment_id = compartment_id
+        chat_detail.compartment_id = compartment_ocid
 
         chat_request = CohereChatRequest(chat_history=st.session_state.chat_history, tools=tools)
         chat_request.max_tokens = 4000
@@ -125,21 +158,18 @@ if user_input:
 
         # Iterate over the tool calls generated by the model
         if not tool_call_response:
-            cohere_tool_results = CohereToolResult()
-            cohere_tool_results.outputs = []
-            chat_request.tool_results = cohere_tool_results.outputs
-            chat_request.is_force_single_step = True
-            chat_response = generative_ai_inference_client.chat(chat_detail)
+            print("No tool_call_response", flush=True)            
             answer_items = chat_response.data.chat_response.text
 
         else:
-            print("The model recommends doing the following tool calls:")
-            print("\n".join(str(tool_call) for tool_call in chat_response.data.chat_response.tool_calls))
+            print("The model recommends doing the following tool calls:", flush=True)
+            print("\n".join(str(tool_call) for tool_call in chat_response.data.chat_response.tool_calls), flush=True)
             for tool_call in tool_call_response:
                 # here is where you would call the tool recommended by the model, using the parameters recommended by the model
                 if tool_call.parameters is None:
                     tool_call.parameters = {}
                 output = functions_map[tool_call.name](**tool_call.parameters)
+                print("output="+str(output), flush=True)
                 # store the output in a list
                 outputs = output
                 tool_result = CohereToolResult()
@@ -165,3 +195,6 @@ if user_input:
         st.markdown(response)
     # Add assistant response to chat history
     st.session_state.chat_history.append({"role": "CHATBOT", "message": response})
+
+# list the files
+# get the file digital_assistant.sitemap
