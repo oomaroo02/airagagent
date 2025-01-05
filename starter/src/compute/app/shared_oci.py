@@ -774,7 +774,7 @@ def decodeJson(value):
 
 ## -- upload_agent_bucket ------------------------------------------------------------------
 
-def upload_agent_bucket(value, content=None):
+def upload_agent_bucket(value, content=None, path=None):
 
     log( "<upload_agent_bucket>")
     eventType = value["eventType"]

@@ -61,7 +61,7 @@ def eventDocument(value):
         log_in_file("content", result["content"])
         if len(result["content"])==0:
            return 
-        shared_oci.upload_agent_bucket(value, result["content"])    
+        shared_oci.upload_agent_bucket(value, result["content"], result["path"])    
 
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         # No need to get the content for deleting
