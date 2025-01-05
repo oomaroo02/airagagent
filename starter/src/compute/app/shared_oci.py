@@ -508,91 +508,120 @@ def belgian(value):
     log( "</belgian>")
     return result  
 
-## -- speech --------------------------------------------------------------
+## -- delete_bucket_folder --------------------------------------------------
+
+def delete_bucket_folder(namespace, bucketName, prefix):
+    log( "<delete_bucket_folder> "+prefix)
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
+    response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+    for object_file in response.data.objects:
+        f = object_file.name
+        log( "<delete_bucket_folder> Deleting: " + f )
+        os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
+        log( "<delete_bucket_folder> Deleted: " + f )
+    log( "</delete_bucket_folder>" )
+
+## -- speech ----------------------------------------------------------------
 
 def speech(value):
     log( "<speech>")
+    eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     compartmentId = value["data"]["compartmentId"]
+    prefix = resourceName + ".speech"
 
-    speech_client = oci.ai_speech.AIServiceSpeechClient(config = {}, signer=signer)
-    job = {
-        "normalization": {
-                "isPunctuationEnabled": True
-        },
-        "compartmentId": compartmentId,
-        "displayName": UNIQUE_ID,
-        "modelDetails": {
-                "domain": "GENERIC",
-                "languageCode": "en-US"
-        },
-        "inputLocation": {
-                "locationType": "OBJECT_LIST_INLINE_INPUT_LOCATION",
-                "objectLocations": [
-                    {
-                            "namespaceName": namespace,
-                            "bucketName": bucketName,
-                            "objectNames": [
-                                resourceName
-                            ]
-                    }
-                ]
-        },
-        "outputLocation": {
-                "namespaceName": namespace,
-                "bucketName": bucketName,
-                "prefix": "speech"
-        },
-        "additionalTranscriptionFormats": [
-                "SRT"
-        ]
-    }
-    resp = speech_client.create_transcription_job(job)
-    log_in_file("speech_resp",str(resp.data))
+    if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
+        # Delete previous speech conversion 
+        delete_bucket_folder( namespace, bucketName, prefix )
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        job = {
+            "normalization": {
+                    "isPunctuationEnabled": True
+            },
+            "compartmentId": compartmentId,
+            "displayName": UNIQUE_ID,
+            "modelDetails": {
+                    "domain": "GENERIC",
+                    "languageCode": "en-US"
+            },
+            "inputLocation": {
+                    "locationType": "OBJECT_LIST_INLINE_INPUT_LOCATION",
+                    "objectLocations": [
+                        {
+                                "namespaceName": namespace,
+                                "bucketName": bucketName,
+                                "objectNames": [
+                                    resourceName
+                                ]
+                        }
+                    ]
+            },
+            "outputLocation": {
+                    "namespaceName": namespace,
+                    "bucketName": bucketName,
+                    "prefix": prefix
+            },
+            "additionalTranscriptionFormats": [
+                    "SRT"
+            ]
+        }
+        speech_client = oci.ai_speech.AIServiceSpeechClient(config = {}, signer=signer)
+        resp = speech_client.create_transcription_job(job)
+        log_in_file("speech_resp",str(resp.data))
+
     log( "</speech>")
 
 ## -- documentUnderstanding -------------------------------------------------
 
 def documentUnderstanding(value):
+
     log( "<documentUnderstanding>")
+    eventType = value["eventType"]    
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     compartmentId = value["data"]["compartmentId"]
+    prefix = resourceName +".docu"
 
-    document_understanding_client = oci.ai_document.AIServiceDocumentClient(config = {}, signer=signer)
-    job = {
-        "processorConfig": {
-            "language": "ENG",
-            "processorType": "GENERAL",
-            "features": [
-                {
-                    "featureType": "TEXT_EXTRACTION"
-                }
-            ],
-            "isZipOutputEnabled": False
-        },
-        "compartmentId": compartmentId,
-        "inputLocation": {
-            "sourceType": "OBJECT_STORAGE_LOCATIONS",
-            "objectLocations": [
-                {
-                    "bucketName": bucketName,
-                    "namespaceName": namespace,
-                    "objectName": resourceName
-                }
-            ]
-        },
-        "outputLocation": {
-            "namespaceName": namespace,
-            "bucketName": bucketName,
-            "prefix": "docunderstanding"
+    if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
+        # Delete previous speech conversion 
+        delete_bucket_folder( namespace, bucketName, prefix )
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        job = {
+            "processorConfig": {
+                "language": "ENG",
+                "processorType": "GENERAL",
+                "features": [
+                    {
+                        "featureType": "TEXT_EXTRACTION"
+                    }
+                ],
+                "isZipOutputEnabled": False
+            },
+            "compartmentId": compartmentId,
+            "inputLocation": {
+                "sourceType": "OBJECT_STORAGE_LOCATIONS",
+                "objectLocations": [
+                    {
+                        "bucketName": bucketName,
+                        "namespaceName": namespace,
+                        "objectName": resourceName
+                    }
+                ]
+            },
+            "outputLocation": {
+                "namespaceName": namespace,
+                "bucketName": bucketName,
+                "prefix": prefix
+            }
         }
-    }
-    resp = document_understanding_client.create_processor_job(job)
-    log_in_file("documentUnderstanding_resp",str(resp.data))
+        document_understanding_client = oci.ai_document.AIServiceDocumentClient(config = {}, signer=signer)
+        resp = document_understanding_client.create_processor_job(job)
+        log_in_file("documentUnderstanding_resp",str(resp.data))
     log( "</documentUnderstanding>")
 
 ## -- sitemap ------------------------------------------------------------------
@@ -602,75 +631,81 @@ def sitemap(value):
     # The format of the file expected is a txt file. Each line contains a full URI.
     # Transforms all the links in PDF and reupload them as PDF in the same object storage
     log( "<sitemap>")
+    eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
-    resourceNameWoExt = str(pathlib.Path(resourceName).with_suffix(''))
-    prefix="site/"+resourceNameWoExt
-    fileList = []
+    prefix=resourceName+".download"
 
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-    upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)            
+    if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
+        # Delete previous speech conversion 
+        delete_bucket_folder( namespace, bucketGenAI, prefix )
 
-    resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-    file_name = LOG_DIR+"/"+UNIQUE_ID+".sitemap"
-    with open(file_name, 'wb') as f:
-        for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
-            f.write(chunk)
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
+        fileList = []
 
-    try:
-        with open(file_name, 'r') as f:
-            for line in f:
-                try:
-                    line = line.strip()  # Remove leading/trailing whitespace
-                    # Handle empty lines gracefully
-                    if not line:
-                        continue
+        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)            
 
-                    full_uri = line
+        resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
+        file_name = LOG_DIR+"/"+UNIQUE_ID+".sitemap"
+        with open(file_name, 'wb') as f:
+            for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
+                f.write(chunk)
 
-                    # Print the filename with the ".pdf" extension
-                    pdf_path = full_uri
-                    # Remove trailing /
-                    last_char = pdf_path[-1:]
-                    if last_char == '/':
-                        pdf_path = pdf_path[:-1]
+        try:
+            with open(file_name, 'r') as f:
+                for line in f:
+                    try:
+                        line = line.strip()  # Remove leading/trailing whitespace
+                        # Handle empty lines gracefully
+                        if not line:
+                            continue
 
-                    pdf_path = pdf_path.replace('/', '___');
-                    pdf_path = pdf_path+'.pdf'
-                    log("<sitemap>"+full_uri)
-                    pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
-                    log("<sitemap>Created: "+pdf_path)
- 
-                    metadata = {'customized_url_source': full_uri}
+                        full_uri = line
 
-                    # Upload to object storage as "site/"+pdf_path
-                    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, part_size=2 * MEBIBYTE, content_type='application/pdf', metadata=metadata)
-                    fileList.append( prefix+"/"+pdf_path )
+                        # Print the filename with the ".pdf" extension
+                        pdf_path = full_uri
+                        # Remove trailing /
+                        last_char = pdf_path[-1:]
+                        if last_char == '/':
+                            pdf_path = pdf_path[:-1]
 
-#                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
-#                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
-                    
-                except Exception as e:
-                    log("<sitemap>Error parsing line: "+line+" in "+resourceName)
-                    log("<sitemap>Exception:" + str(e))
+                        pdf_path = pdf_path.replace('/', '___');
+                        pdf_path = pdf_path+'.pdf'
+                        log("<sitemap>"+full_uri)
+                        pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
+                        log("<sitemap>Created: "+pdf_path)
+    
+                        metadata = {'customized_url_source': full_uri}
 
-        # Check if there are file that are in the folder and not in the sitemap
-        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
-        for object_file in response.data.objects:
-            f = object_file.name
-            if f in fileList:
-                fileList.remove(f)
-            else: 
-                log( "<sitemap>Deleting: " + f )
-                os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
-                log( "<sitemap>Deleted: " + f )
+                        # Upload to object storage as "site/"+pdf_path
+                        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, part_size=2 * MEBIBYTE, content_type='application/pdf', metadata=metadata)
+                        fileList.append( prefix+"/"+pdf_path )
 
-    except FileNotFoundError as e:
-        log("<sitemap>Error: File not found= "+file_name)
-    except Exception as e:
-        log("<sitemap>An unexpected error occurred: " + str(e))
+    #                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
+    #                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
+                        
+                    except Exception as e:
+                        log("<sitemap>Error parsing line: "+line+" in "+resourceName)
+                        log("<sitemap>Exception:" + str(e))
+
+            # Check if there are file that are in the folder and not in the sitemap
+            response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+            for object_file in response.data.objects:
+                f = object_file.name
+                if f in fileList:
+                    fileList.remove(f)
+                else: 
+                    log( "<sitemap>Deleting: " + f )
+                    os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
+                    log( "<sitemap>Deleted: " + f )
+
+        except FileNotFoundError as e:
+            log("<sitemap>Error: File not found= "+file_name)
+        except Exception as e:
+            log("<sitemap>An unexpected error occurred: " + str(e))
     log( "</sitemap>")
 
 
@@ -679,12 +714,9 @@ def sitemap(value):
 def decodeJson(value):
     log( "<decodeJson>")
     global signer
-    fnOcid = os.getenv('FN_OCID')
-    fnInvokeEndpoint = os.getenv('FN_INVOKE_ENDPOINT')
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
-    resourceId = value["data"]["resourceId"]
     
     # Read the JSON file from the object storage
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
@@ -740,60 +772,50 @@ def decodeJson(value):
     log( "</decodeJson>")
     return result
 
-## -- upload_genai_bucket ------------------------------------------------------------------
+## -- upload_agent_bucket ------------------------------------------------------------------
 
-def upload_genai_bucket(value, content=None, path=None):
+def upload_agent_bucket(value, content=None, path=None):
 
-    log( "<upload_genai_bucket>")
+    log( "<upload_agent_bucket>")
+    eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     resourceGenAI = resourceName
-
-    # Set the original URL source (GenAI Agent)
-    if path==None:
-        path = value["data"]["resourceId"]
-    region = os.getenv("TF_VAR_region")
-    customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
-    log( "customized_url_source="+customized_url_source )
-    metadata = {'customized_url_source': customized_url_source}
-
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-    file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
-    if not content:
-        contentType = value["contentType"]
-        resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-        with open(file_name, 'wb') as f:
-            for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
-                f.write(chunk)
-    else:
-        contentType = "text/html"
-        with open(file_name, 'w') as f:
-            f.write(content)
-        resourceGenAI = resourceGenAI + ".convert.txt"
-
-    upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-    upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
-    log( "</upload_genai_bucket>")            
-
-## -- delete_genai_bucket ------------------------------------------------------------------
-
-def delete_genai_bucket(value, content=None):
-
-    log( "<delete_genai_bucket>")
-    namespace = value["data"]["additionalDetails"]["namespace"]
-    bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
-    resourceName = value["data"]["resourceName"]
-    resourceGenAI = resourceName
-
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
     if content:
         resourceGenAI = resourceGenAI + ".convert.txt"
 
-    os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
-    log( "</delete_genai_bucket>")             
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        # Set the original URL source (GenAI Agent)
+        if path==None:
+            path = value["data"]["resourceId"]
+        region = os.getenv("TF_VAR_region")
+        customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
+        log( "customized_url_source="+customized_url_source )
+        metadata = {'customized_url_source': customized_url_source}
+
+        file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
+        if not content:
+            contentType = value["contentType"]
+            resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
+            with open(file_name, 'wb') as f:
+                for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
+                    f.write(chunk)
+        else:
+            contentType = "text/html"
+            with open(file_name, 'w') as f:
+                f.write(content)
+
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
+        log( "<upload_agent_bucket> Delete")
+        os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
+
+    log( "</upload_agent_bucket>")                      
 
 ## -- genai_agent_datasource_ingest -----------------------------------------------------------
 

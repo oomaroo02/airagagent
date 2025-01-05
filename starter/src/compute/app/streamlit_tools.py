@@ -12,15 +12,16 @@ import streamlit as st
 compartment_ocid = os.getenv("TF_VAR_compartment_ocid")
 namespace = os.getenv("TF_VAR_namespace")
 prefix = os.getenv("TF_VAR_prefix")
+region = os.getenv("TF_VAR_region")
 agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
 bucketName = prefix + "-public-bucket"
 
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 
 # Service endpoint for frankfurt region.Change the region if needed.
-endpoint = "https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com"
+generative_ai_enendpoint = "https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com"
 generative_ai_inference_client = GenerativeAiInferenceClient(config={},signer=signer,
-                                                             service_endpoint=endpoint,
+                                                             service_endpoint=generative_ai_enendpoint,
                                                              retry_strategy=retry.NoneRetryStrategy(),
                                                              timeout=(10, 240))
 
@@ -55,9 +56,11 @@ def get_file(name):
 
 # Search files
 def search_files(question):
-    genai_agent_runtime_client = oci.generative_ai_agent.GenerativeAiAgentRuntimeClient(config = {}, signer=signer)    
+    endpoint = "https://agent-runtime.generativeai."+region+".oci.oraclecloud.com"
+    genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(config = {}, service_endpoint=endpoint, signer=signer)    
     resp = genai_agent_runtime_client.create_session(
-        create_session_details=oci.generative_ai_agent.models.CreateSessionDetails(
+        agent_endpoint_id = agent_endpoint_ocid,
+        create_session_details=oci.generative_ai_agent_runtime.models.CreateSessionDetails(
 		    description='session',
 		    display_name='session'
         ))
@@ -65,13 +68,18 @@ def search_files(question):
     # XX Keep session in cookie ?
     resp_chat = genai_agent_runtime_client.chat(
         agent_endpoint_id = agent_endpoint_ocid,
-        chat_details=oci.generative_ai_agent.models.ChatDetails(
+        chat_details=oci.generative_ai_agent_runtime.models.ChatDetails(
             session_id=resp.data.id,
 		    user_message=question
         ))
     log( resp_chat.data )    
-    list_object = []    
-    list_object.append({f"response": resp_chat.data.message})        
+    list_object = []
+    source_file_name = resp_chat.data.message.content.citations[0].source_location
+    if resp_chat.data.message.content.citations[0].source_location.startswith("https://objectstorage"): 
+      source_file_name = resp_chat.data.message.content.citations[0].source_location.url.split("/o/",1)[1]
+  
+    log( source_file_name )
+    list_object.append({f"response": resp_chat.data.message.content.text, "source_file_name": source_file_name })        
     return list_object
 
 #Tool parameter definition
@@ -99,7 +107,7 @@ tool2.description = "list the files in object storage"
 
 tool3 = CohereTool()
 tool3.name = "search_files"
-tool3.description = "search the files for content"
+tool3.description = "Search the files for content. It returns 2 fields: 1. response: the response of the question 2. source_file_name: the file name where the response was found"
 tool3.parameter_definitions = {
     "question": search_files_param
 }
@@ -130,15 +138,19 @@ st.button('Reset Chat', on_click=reset_conversation)
 
 if st.session_state.chat_history is not None:
     for chat_history in st.session_state.chat_history:
-        with st.chat_message(chat_history["role"]):
-            st.markdown(chat_history["message"])
+        log( "type=" + str(type(chat_history)) )
+        log( chat_history )
+        if isinstance(chat_history, (dict)):
+            with st.chat_message(chat_history["role"]):
+                st.markdown(chat_history["message"])
 
 if user_input:
-    def ai_response():
+    def ai_response(st):
         chat_detail = ChatDetails()
         chat_detail.serving_mode = OnDemandServingMode(model_id="cohere.command-r-plus-08-2024")
         chat_detail.compartment_id = compartment_ocid
 
+        log( st.session_state.chat_history )
         chat_request = CohereChatRequest(chat_history=st.session_state.chat_history, tools=tools)
         chat_request.max_tokens = 4000
         chat_request.temperature = 0
@@ -176,12 +188,15 @@ if user_input:
                 tool_result.call = tool_call
                 tool_result.outputs = outputs
                 tool_results.append(tool_result)
+                # XXX Add tools message to the history
+                st.session_state.chat_history.append(oci.generative_ai_inference.models.CohereToolMessage(role="TOOL", tool_results=tool_results))
 
             chat_request.tool_results = tool_results
             chat_request.is_force_single_step = True
             chat_detail.chat_request = chat_request
             chat_response = generative_ai_inference_client.chat(chat_detail)
             answer_items = chat_response.data.chat_response.text
+  
 
         return answer_items
 
@@ -189,7 +204,7 @@ if user_input:
     # Add user message to chat history
     st.session_state.chat_history.append({"role": "USER", "message": user_input})
 
-    response = ai_response()
+    response = ai_response(st)
     # Display assistant response in chat message container
     with st.chat_message("CHATBOT"):
         st.markdown(response)
@@ -198,3 +213,4 @@ if user_input:
 
 # list the files
 # get the file digital_assistant.sitemap
+# search document that says "what is jazz"

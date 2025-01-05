@@ -4,16 +4,23 @@ import shared_db
 import shared_oci
 import pathlib
 
-## -- insertDocument --------------------------------------------------------
+## -- getFileExtension ------------------------------------------------------
 
 def getFileExtension(resourceName):
     lowerResourceName = resourceName.lower()
     return pathlib.Path(lowerResourceName).suffix
 
-## -- insertDocument --------------------------------------------------------
+## -- eventDocument ---------------------------------------------------------
 
-def insertDocument(value):
-    log( "<insertDocument>")
+def eventDocument(value):
+    log( "<eventDocument>")
+    eventType = value["eventType"]
+    # ex: /n/fr03kabcd/psql-public-bucket/o/country.pdf"
+    resourceId = value["data"]["resourceId"]
+    log( "eventType=" + eventType + " - " + resourceId ) 
+    # eventType == "com.oraclecloud.objectstorage.createobject":
+    # eventType == "com.oraclecloud.objectstorage.updateobject":
+    # eventType == "com.oraclecloud.objectstorage.deleteobject":
     resourceName = value["data"]["resourceName"]
     resourceExtension = getFileExtension(resourceName)
     log( "Extension:" + resourceExtension )
@@ -21,15 +28,8 @@ def insertDocument(value):
     # Content 
     result = { "content": "-" }
     if resourceExtension in [".pdf", ".txt", ".csv", ".md"]:
-        shared_oci.upload_genai_bucket(value)
+        shared_oci.upload_agent_bucket(value)
         return
-    elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
-        result = shared_oci.vision(value)
-    elif resourceExtension in [".srt"]:
-        log("IGNORE .srt")
-        return
-    elif resourceExtension in [".json"]:
-        result = shared_oci.decodeJson(value)
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.speech(value)
@@ -42,37 +42,29 @@ def insertDocument(value):
         # This will create a PDFs file in Object Storage with the content of each site (line) ".sitemap" 
         shared_oci.sitemap(value)
         return
-
+    elif resourceExtension in [".srt"]:
+        log("IGNORE .srt")
+        return
     elif resourceName.endswith("/"):
         # Ignore
         log("IGNORE /")
         return
-    else:
-        result = shared_oci.invokeTika(value)
 
-    log_in_file("content", result["content"])
-    if len(result["content"])==0:
-       return 
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        if resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
+            result = shared_oci.vision(value)
+        elif resourceExtension in [".json"]:
+            result = shared_oci.decodeJson(value)
+        else:
+            result = shared_oci.invokeTika(value)
 
-    # Upload the GENAI Bucket
-    shared_oci.upload_genai_bucket(value, result["content"],result["path"])    
-    log( "</insertDocument>")
+        log_in_file("content", result["content"])
+        if len(result["content"])==0:
+           return 
 
-## -- deleteDocument --------------------------------------------------------
-
-def deleteDocument(value):
-    log( "<deleteDocument>")
-    log( str(value) )
-    resourceId = value["data"]["resourceId"]
-    resourceName = value["data"]["resourceName"]
-    resourceExtension = getFileExtension(resourceName)
-
-    if resourceExtension in [".pdf", ".txt", ".csv", ".md"]:
-        shared_oci.delete_genai_bucket(value)
-    else:
-        shared_oci.delete_genai_bucket(value,"-")        
-    log( "</deleteDocument>")
-
+    # Upload to the Agent Bucket
+    shared_oci.upload_agent_bucket(value, result["content"],result["path"])    
+    log( "</eventDocument>")
 
 ## -- updateCount ------------------------------------------------------------------
 

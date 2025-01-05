@@ -52,7 +52,7 @@ def stream_loop(client, stream_id, initial_cursor):
                 shared_oci.UNIQUE_ID = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
                 log_in_file("stream", json_value)
                 value = json.loads(json_value)
-                eventDocument(value)
+                document.eventDocument(value)
             except:
                 log("Exception: stream_loop") 
                 log(traceback.format_exc())
@@ -63,20 +63,6 @@ def stream_loop(client, stream_id, initial_cursor):
         time.sleep(1)
         # use the next-cursor for iteration
         cursor = get_response.headers["opc-next-cursor"]
-
-## -- eventDocument --------------------------------------------------------
-
-def eventDocument(value):
-    eventType = value["eventType"]
-    # ex: /n/fr03kzmuvhtf/b/psql-public-bucket/o/country.pdf"
-    # XXX resourcePath
-    resourceId = value["data"]["resourceId"]
-    log( "eventType=" + eventType + " - " + resourceId ) 
-
-    if eventType in ["com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject"]:
-        document.insertDocument( value )
-    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        document.deleteDocument( value )
 
 ## -- main ------------------------------------------------------------------
 
