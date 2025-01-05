@@ -731,7 +731,7 @@ def decodeJson(value):
     log("Read file from object storage: "+ file_name)
     j = json.loads(file_content)   
 
-    if resourceName[:resourceName.index("/")] == "docunderstanding":
+    if ".docu/" in resourceName:
         # DocUnderstanding
         concat_text = ""
         pages = {}
@@ -774,7 +774,7 @@ def decodeJson(value):
 
 ## -- upload_agent_bucket ------------------------------------------------------------------
 
-def upload_agent_bucket(value, content=None, path=None):
+def upload_agent_bucket(value, content=None):
 
     log( "<upload_agent_bucket>")
     eventType = value["eventType"]
