@@ -63,7 +63,7 @@ def eventDocument(value):
            return 
         shared_oci.upload_agent_bucket(value, result["content"])    
 
-    elif eventType == "com.oraclecloud.objectstorage.deleteeobject":
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         # No need to get the content for deleting
         shared_oci.upload_agent_bucket(value, "-")    
 
