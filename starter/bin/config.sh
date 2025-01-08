@@ -94,8 +94,8 @@ if declare -p | grep -q "__TO_FILL__"; then
       echo "Generating OCI Auth token"
       . $BIN_DIR/gen_auth_token.sh
     else 
-      read -r -p "Enter your OCI Auth token (TF_VAR_api_key) " TF_VAR_auth_token 
-      store_env_sh TF_VAR_auth_token $TF_VAR_api_key
+      read -r -p "Enter your OCI Auth token (TF_VAR_auth_token) " TF_VAR_auth_token 
+      store_env_sh TF_VAR_auth_token $TF_VAR_auth_token
     fi      
   fi
 
