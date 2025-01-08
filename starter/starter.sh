@@ -1,8 +1,9 @@
 #!/bin/bash
 export PROJECT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export TARGET_DIR=$PROJECT_DIR/target
-mkdir -p $TARGET_DIR
+mkdir -p $TARGET_DIR/logs
 cd $PROJECT_DIR
+DATE_POSTFIX=`date '+%Y%m%d-%H%M%S'`
 
 export ARG1=$1
 export ARG2=$2
@@ -41,7 +42,7 @@ if [ -z $ARG1 ] || [ "$ARG1" == "help" ]; then
   echo "./starter.sh deploy oke               - Deploy APP and UI on OKE     (Deployment: Kubernetes)"
   echo
   echo "--- KUBECTL ----------------------------------------------------------------------------------"
-  echo "./starter.sh env                      - Set kubeconfig to connect to Kubernetes"
+  echo "./starter.sh env                      - Set environment variable like KUBECONFIG for Kubernetes"
   echo "kubectl get pods                      - Example of a command to check the PODs"
   echo
   echo "--- LOGS ----------------------------------------------------------------------------------"
@@ -53,8 +54,10 @@ fi
 
 if [ "$ARG1" == "build" ]; then
   if [ "$ARG2" == "" ]; then
-    # Show the log and save it in target/build.log
-    bin/build_all.sh ${@:2} 2>&1 | tee $TARGET_DIR/build.log
+    export LOG_NAME=$TARGET_DIR/logs/build.${DATE_POSTFIX}.log
+    # Show the log and save it to target/build.log and target/logs
+    ln -sf $LOG_NAME $TARGET_DIR/build.log
+    bin/build_all.sh $@ 2>&1 | tee $LOG_NAME
   elif [ "$ARG2" == "app" ]; then
     src/app/build_app.sh ${@:2}
   elif [ "$ARG2" == "ui" ]; then
@@ -65,7 +68,10 @@ if [ "$ARG1" == "build" ]; then
 
 
 elif [ "$ARG1" == "destroy" ]; then
-  bin/destroy_all.sh ${@:2} 2>&1 | tee $TARGET_DIR/destroy.log
+  LOG_NAME=$TARGET_DIR/logs/destroy.${DATE_POSTFIX}.log
+  # Show the log and save it to target/build.log and target/logs
+  ln -sf $LOG_NAME $TARGET_DIR/destroy.log
+  bin/destroy_all.sh $@ 2>&1 | tee $LOG_NAME
 elif [ "$ARG1" == "ssh" ]; then
   if [ "$ARG2" == "compute" ]; then
     bin/ssh_compute.sh
@@ -104,7 +110,7 @@ elif [ "$ARG1" == "deploy" ]; then
     exit 1
   fi    
 elif [ "$ARG1" == "env" ]; then
-  bash --rcfile ./env.sh
+  bash --rcfile ./env.sh ${@:2}
 else 
   echo "Unknown command: $ARG1"
   exit 1

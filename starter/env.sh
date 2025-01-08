@@ -8,7 +8,6 @@ export TF_VAR_prefix="a1"
 export TF_VAR_ui_type="html"
 export TF_VAR_db_type="autonomous"
 export TF_VAR_license_model="LICENSE_INCLUDED"
-export TF_VAR_oke_type="managed"
 export TF_VAR_deploy_type="function"
 export TF_VAR_language="java"
 export TF_VAR_db_user="admin"
@@ -22,11 +21,7 @@ export TF_VAR_db_password="__TO_FILL__"
 # TF_VAR_auth_token : See doc: https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm
 export TF_VAR_auth_token="__TO_FILL__"
 
-if [ -f $PROJECT_DIR/../group_common_env.sh ]; then
-  . $PROJECT_DIR/../group_common_env.sh
-elif [ -f $PROJECT_DIR/../../group_common_env.sh ]; then
-  . $PROJECT_DIR/../../group_common_env.sh
-elif [ -f $HOME/.oci_starter_profile ]; then
+if [ -f $HOME/.oci_starter_profile ]; then
   . $HOME/.oci_starter_profile
 fi
 
