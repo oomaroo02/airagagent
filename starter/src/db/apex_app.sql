@@ -33,7 +33,7 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     104
 --   Name:            AI_AGENT_RAG
---   Date and Time:   22:35 Wednesday January 1, 2025
+--   Date and Time:   15:37 Thursday January 9, 2025
 --   Exported By:     VECTOR
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -18355,11 +18355,12 @@ wwv_flow_imp_page.create_page_da_action(
 '  l_id number;',
 '  doc_page number := null;',
 'begin',
+'  -- Call Gen AI Agent',
 '  res := ai_agent.ai_agent_execute(:P1_AGENT_ENDPOINT_ID,:P1_SESSION_ID,:P1_MESSAGE2);',
 '  :P1_RESPONSE := res;',
 '  message := APEX_MARKDOWN.TO_HTML( JSON_VALUE(res, ''$.message.content.text'') );',
 '',
-'  -- Citations',
+'  -- Get the Citations',
 '  je := JSON_ELEMENT_T.parse(res);',
 '  jo := treat(je AS JSON_OBJECT_T);',
 '  je := jo.get_Object(''message'').get_Object(''content'').get_Array(''citations'');',
@@ -18873,7 +18874,8 @@ wwv_flow_imp_shared.create_install_script(
 '',
 'create or replace package body "AI_AGENT" as',
 '',
-'-- compartment_id varchar2(256) := ''ocid1.compartment.oc1..xxxxxx'';',
+'g_region varchar2(256) := '''';',
+'g_credential_name varchar2(256) := '''';',
 '',
 '-------------------------------------------------------------------------------',
 '',
@@ -18904,7 +18906,7 @@ wwv_flow_imp_shared.create_install_script(
 '  log( ''<ai_agent_session> LENGTH'', ''LENGTH='' || LENGTH(jo.to_clob()));',
 '  resp := DBMS_CLOUD.send_request( ',
 '        credential_name => ''OCI$RESOURCE_PRINCIPAL'', ',
-'        uri =>''https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/sessions'',',
+'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/sessions'',',
 '        method => ''POST'', ',
 '        body => APEX_UTIL.CLOB_TO_BLOB(jo.to_clob)                                                                                         ',
 '    ); ',
@@ -18935,7 +18937,7 @@ wwv_flow_imp_shared.create_install_script(
 '  log( ''<ai_agent_execute> LENGTH'', ''LENGTH='' || LENGTH(jo.to_clob()));',
 '  resp := DBMS_CLOUD.send_request( ',
 '        credential_name => ''OCI$RESOURCE_PRINCIPAL'', ',
-'        uri =>''https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/sessions/''||agent_session_id||''/actions/execute'',',
+'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/sessions/''||agent_session_id||''/actions/execute'',',
 '        method => ''POST'', ',
 '        body => APEX_UTIL.CLOB_TO_BLOB(jo.to_clob)                                                                                         ',
 '    ); ',
@@ -18993,8 +18995,9 @@ wwv_flow_imp_shared.create_install_script(
 '  return res;',
 'end;',
 '',
-'',
-'-------------------------------------------------------------------------------',
+'begin',
+'  select value into g_region from AI_AGENT_RAG_CONFIG where key=''region'';',
+'  select value into g_credential_name from AI_AGENT_RAG_CONFIG where key=''credential_name'';',
 'end "AI_AGENT";',
 '/',
 '',
