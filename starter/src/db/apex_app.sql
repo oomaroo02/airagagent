@@ -33,7 +33,7 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     104
 --   Name:            AI_AGENT_RAG
---   Date and Time:   15:37 Thursday January 9, 2025
+--   Date and Time:   18:39 Thursday January 9, 2025
 --   Exported By:     VECTOR
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -18371,13 +18371,12 @@ wwv_flow_imp_page.create_page_da_action(
 '    citation := ''<div class="citation"> + <span class="hide"> Citations: <ul>'';',
 '    FOR indx IN 0 .. ja.get_size - 1',
 '    LOOP',
+'      doc_page := null;',
 '      je := ja.get(indx);',
 '      jo := treat(je AS JSON_OBJECT_T);',
 '      url := jo.get_Object(''sourceLocation'').get_string(''url'');',
 '      if url like ''https://objectstorage.%'' then',
 '        doc_name := SUBSTR(url,INSTR(url, ''/'', -1)+1);',
-'        insert into ai_agent_rag_citation( session_id, url, page, snippet) values (:P1_SESSION_ID, url, doc_page, ''-'') RETURNING id INTO l_id;',
-'        url_page := APEX_PAGE.GET_URL ( p_page => 2, p_items  => ''P2_CITATION_ID'', p_values => l_id );',
 '      else',
 '        doc_name := url;',
 '        url_page := url;',
@@ -18397,6 +18396,10 @@ wwv_flow_imp_page.create_page_da_action(
 '        doc_name := doc_name || '')'';',
 '      end if; ',
 '      -- http://www.examplesite.com/pls/apex/f?p=123:20:::::P20_ITEM1,P20_ITEM2:Oranges,Apples',
+'      if url like ''https://objectstorage.%'' then',
+'        insert into ai_agent_rag_citation( session_id, url, page, snippet) values (:P1_SESSION_ID, url, doc_page, ''-'') RETURNING id INTO l_id;',
+'        url_page := APEX_PAGE.GET_URL ( p_page => 2, p_items  => ''P2_CITATION_ID'', p_values => l_id );',
+'      end if;  ',
 '      url_page := ''<a href="'' || url_page || ''" target="_blank">'' || doc_name || ''</a>'';',
 '      citation := citation || ''<li>'' || url_page || '' - '' || replace(jo.get_string(''sourceText''), ''"'', '''''''') || ''</li>'';',
 '    END LOOP;',

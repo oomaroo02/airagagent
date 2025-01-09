@@ -52,6 +52,10 @@ sleep 5
 oci os object bulk-upload -ns $TF_VAR_namespace -bn ${TF_VAR_prefix}-public-bucket --src-dir ../sample_files --overwrite --content-type auto
 
 echo "-----------------------------------------------------------------------"
+echo "(experimental) Cohere with Tools and GenAI Agent:"
+echo "http://${BASTION_IP}:8080/"
+echo
+echo "-----------------------------------------------------------------------"
 echo "APEX login:"
 echo
 echo "APEX Workspace"
