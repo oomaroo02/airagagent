@@ -1,4 +1,4 @@
-export DB_USER="vector"
+export DB_USER="apex_app"
 export DB_PASSWORD="##TF_VAR_db_password##"
 export DB_URL="##DB_URL##"
 
