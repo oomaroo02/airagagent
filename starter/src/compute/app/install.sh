@@ -19,8 +19,8 @@ $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   delete from APEX_APP.AI_AGENT_RAG_CONFIG;
   insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('agent_endpoint', '$AGENT_ENDPOINT_OCID');
-  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('region', 'OCI\$RESOURCE_PRINCIPAL');
-  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('credential_name', '$TF_VAR_region');
+  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('region', '$TF_VAR_region');
+  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key,value) values('credential_name', 'OCI\$RESOURCE_PRINCIPAL');
   commit;
 end;
 /
