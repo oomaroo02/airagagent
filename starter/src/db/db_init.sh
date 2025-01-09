@@ -10,7 +10,8 @@ sudo dnf install -y java-17
 
 # Create the script to install the APEX Application
 cat > import_application.sql << EOF 
-create user if not exists apex_app identified by "$DB_PASSWORD" default tablespace USERS quota unlimited on USERS temporary tablespace TEMP 
+create user if not exists apex_app identified by "$DB_PASSWORD" default tablespace USERS quota unlimited on USERS temporary tablespace TEMP; 
+/
 grant connect, resource, unlimited tablespace to apex_app;
 /
 EXEC DBMS_CLOUD_ADMIN.ENABLE_RESOURCE_PRINCIPAL('APEX_APP');
