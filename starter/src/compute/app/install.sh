@@ -2,6 +2,8 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
+. ./env.sh
+
 # Python Server
 sudo yum -y install postgresql-devel
 sudo dnf install -y python39 python39-devel
@@ -30,19 +32,6 @@ EOF
 # Get COMPARTMENT_OCID
 curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/ > /tmp/instance.json
 export TF_VAR_compartment_ocid=`cat /tmp/instance.json | jq -r .compartmentId`
-
-# Change the env.sh
-CONFIG_FILE=env.sh
-sed -i "s/##DB_USER##/$DB_USER/" $CONFIG_FILE
-sed -i "s/##DB_PASSWORD##/$DB_PASSWORD/" $CONFIG_FILE
-sed -i "s/##DB_URL##/$DB_URL/" $CONFIG_FILE
-sed -i "s/##STREAM_OCID##/$STREAM_OCID/" $CONFIG_FILE
-sed -i "s/##FN_OCID##/$FN_OCID/" $CONFIG_FILE
-sed -i "s/##AGENT_DATASOURCE_OCID##/$AGENT_DATASOURCE_OCID/" $CONFIG_FILE
-
-## Contain "/"
-sed -i "s!##STREAM_MESSAGE_ENDPOINT##!$STREAM_MESSAGE_ENDPOINT!" $CONFIG_FILE
-sed -i "s!##FN_INVOKE_ENDPOINT##!$FN_INVOKE_ENDPOINT!" $CONFIG_FILE
 
 # Create services
 create_service () {
