@@ -33,7 +33,7 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     104
 --   Name:            AI_AGENT_RAG
---   Date and Time:   18:39 Thursday January 9, 2025
+--   Date and Time:   09:00 Monday January 13, 2025
 --   Exported By:     VECTOR
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -70,7 +70,7 @@ prompt APPLICATION 104 - AI_AGENT_RAG
 --       Reports:
 --       E-Mail:
 --     Supporting Objects:  Included
---       Install scripts:          1
+--       Install scripts:          2
 --   Version:         24.1.4
 --   Instance ID:     7477137326789413
 --
@@ -18999,7 +18999,8 @@ wwv_flow_imp_shared.create_install_script(
 'end;',
 '',
 'begin',
-'  select value into g_region from AI_AGENT_RAG_CONFIG where key=''region'';',
+'  -- ex: ''ocid1.genaiagentendpoint.oc1.us-chicago-1.xxxxx'' -> ''us-chicago-1''',
+'  select REGEXP_SUBSTR(value, ''[^.]+'', 1, 4) into g_region from AI_AGENT_RAG_CONFIG where key=''agent_endpoint'';',
 '  select value into g_credential_name from AI_AGENT_RAG_CONFIG where key=''credential_name'';',
 'end "AI_AGENT";',
 '/',
@@ -19042,6 +19043,24 @@ wwv_flow_imp_shared.create_install_object(
 ,p_object_owner=>'#OWNER#'
 ,p_object_type=>'TABLE'
 ,p_object_name=>'AI_AGENT_RAG_CONFIG'
+);
+end;
+/
+prompt --application/deployment/install/install_config
+begin
+wwv_flow_imp_shared.create_install_script(
+ p_id=>wwv_flow_imp.id(36536289503420723)
+,p_install_id=>wwv_flow_imp.id(38350614953997885)
+,p_name=>'CONFIG'
+,p_sequence=>20
+,p_script_type=>'INSTALL'
+,p_script_clob=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'begin',
+'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''agent_endpoint'', ''##YOUR_AGENT_ENDPOINT##'');',
+'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''credential_name'', ''OCI\$RESOURCE_PRINCIPAL'');',
+'  commit;',
+'end;',
+'/'))
 );
 end;
 /
