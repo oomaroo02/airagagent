@@ -58,4 +58,6 @@ EOT
 
 create_service app ingest
 # create_service app rest
-create_service app streamlit_tools
+create_service app streamlit
+create_service app tools
+
