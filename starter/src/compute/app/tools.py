@@ -19,7 +19,7 @@ bucketName = prefix + "-public-bucket"
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 
 # Service endpoint for frankfurt region.Change the region if needed.
-generative_ai_enendpoint = "https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com"
+generative_ai_enendpoint = "https://inference.generativeai."+region+".oci.oraclecloud.com"
 generative_ai_inference_client = GenerativeAiInferenceClient(config={},signer=signer,
                                                              service_endpoint=generative_ai_enendpoint,
                                                              retry_strategy=retry.NoneRetryStrategy(),

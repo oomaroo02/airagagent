@@ -1,11 +1,13 @@
 import streamlit as st
 import oci
+import os
 from streamlit_spinner import spinner
 
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+region = os.getenv("TF_VAR_region")
+endpoint = "https://agent-runtime.generativeai."+region+".oci.oraclecloud.com"
 
-endpoint = "https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com"
 # Translation dictionary (you can replace this with a file-based solution like JSON or YAML)
 translations = {
     "en": {
@@ -56,7 +58,7 @@ st.title(translations[lang_code]["title"])
 
 # Sidebar for agent endpoint ID and reset chat
 with st.sidebar:
-    agent_endpoint_id = st.text_input(translations[lang_code]["enter_agent_id"], value="ocid1.genaiagentendpoint.oc1.eu-frankfurt-1.amaaaaaaa5hgqmqaa6kimms357dhkj7madhwg33io2mgzjdwpppf6elq47oq")
+    agent_endpoint_id = st.text_input(translations[lang_code]["enter_agent_id"], value=os.getenv("TF_VAR_agent_endpoint_ocid"))
     if st.button(translations[lang_code]["reset_chat"], type="primary", use_container_width=True, help=translations[lang_code]["reset_chat_help"]):
         st.session_state.messages = []  
         st.session_state.session_id = None  
@@ -75,16 +77,17 @@ else:
     # Create GenAI Agent Runtime Client (only if session_id is None)
     if st.session_state.session_id is None:
 
-        genai_agent_runtime_client = genai_agent_service_bmc_python_client.GenerativeAiAgentRuntimeClient(
-            config=config,
+        genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
+            config = {}, 
+            signer=signer,
             service_endpoint=endpoint,
             retry_strategy=oci.retry.NoneRetryStrategy(),
             timeout=(10, 240)
         )
 
         # Create session
-        create_session_details = genai_agent_service_bmc_python_client.models.CreateSessionDetails(
-            display_name="display_name", idle_timeout_in_seconds=10, description="description"
+        create_session_details = oci.generative_ai_agent_runtime.models.CreateSessionDetails(
+            display_name="display_name", description="description"
         )
         create_session_response = genai_agent_runtime_client.create_session(create_session_details, agent_endpoint_id)
 
@@ -107,8 +110,9 @@ else:
             st.markdown(user_input)
 
         # Execute session (re-use the existing session)
-        genai_agent_runtime_client = genai_agent_service_bmc_python_client.GenerativeAiAgentRuntimeClient(
-                config=config, 
+        genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
+                config = {}, 
+                signer=signer, 
                 service_endpoint=endpoint,
                 retry_strategy=oci.retry.NoneRetryStrategy(), 
                 timeout=(10, 240)
@@ -116,10 +120,10 @@ else:
         
         # Display a spinner while waiting for the response
         with spinner(translations[lang_code]["processing_messages"]):  # Spinner for visual feedback
-            execute_session_details = genai_agent_service_bmc_python_client.models.ExecuteSessionDetails(
-                user_message=str(user_input), should_stream=False  # You can set this to True for streaming responses
+            chat_details = oci.generative_ai_agent_runtime.models.ChatDetails(
+                user_message=str(user_input), should_stream=False, session_id=st.session_state.session_id  # You can set this to True for streaming responses
             )
-            execute_session_response = genai_agent_runtime_client.execute_session(agent_endpoint_id, st.session_state.session_id, execute_session_details)
+            execute_session_response = genai_agent_runtime_client.chat(agent_endpoint_id, chat_details)
 
         # Display agent response
         if execute_session_response.status == 200:
