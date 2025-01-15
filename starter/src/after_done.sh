@@ -40,6 +40,7 @@ echo "AGENT_DATASOURCE_OCID=$AGENT_DATASOURCE_OCID"
 echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
 
 # Deploy compute simplified
+mkdir -p $TARGET_DIR/compute/.
 cp -r src/compute/* $TARGET_DIR/compute/.
 if [ -f $TARGET_DIR/compute/app/env.sh ]; then 
   file_replace_variables $TARGET_DIR/compute/app/env.sh
