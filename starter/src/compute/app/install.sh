@@ -5,7 +5,6 @@ cd $SCRIPT_DIR
 . ./env.sh
 
 # Python Server
-sudo yum -y install postgresql-devel
 sudo dnf install -y python39 python39-devel
 sudo pip3.9 install pip --upgrade
 pip3.9 install -r requirements.txt

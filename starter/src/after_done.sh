@@ -54,6 +54,13 @@ oci os object bulk-upload -ns $TF_VAR_namespace -bn ${TF_VAR_prefix}-public-buck
 
 echo "-----------------------------------------------------------------------"
 echo "(experimental) Cohere with Tools and GenAI Agent:"
+echo "http://${BASTION_IP}:8081/"
+echo 
+echo "-----------------------------------------------------------------------"
+echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
+echo
+echo "-----------------------------------------------------------------------"
+echo "Streamlit:"
 echo "http://${BASTION_IP}:8080/"
 echo
 echo "-----------------------------------------------------------------------"

@@ -11,7 +11,7 @@ endpoint = "https://agent-runtime.generativeai."+region+".oci.oraclecloud.com"
 # Translation dictionary (you can replace this with a file-based solution like JSON or YAML)
 translations = {
     "en": {
-        "title": "AI Assistant for the National Bank",
+        "title": "AI Assistant",
         "enter_agent_id": "Enter Agent Endpoint ID",
         "reset_chat": "Reset Chat",
         "reset_chat_help": "Reset chat history and clear screen",
@@ -30,7 +30,7 @@ translations = {
         "citation_text": "Citation Text"
     },
     "ro": {
-        "title": "Asistent AI BNR",
+        "title": "Asistent AI",
         "enter_agent_id": "Introduceți ID-ul punctului final al agentului",
         "reset_chat": "Resetați conversația",
         "reset_chat_help": "Resetați istoricul conversațiilor și ștergeți ecranul",
@@ -38,8 +38,8 @@ translations = {
         "error_no_id": "Vă rugăm să introduceți ID-ul punctului final al agentului în bara laterală pentru a începe conversația",
         "processing_messages": [
             "Lucrăm la solicitarea dvs...",
-            "Asistentul AI BNR verifica in documentatie...",
-            "Asistentul AI BNR verifica in resurse web...",
+            "Asistentul AI verifica in documentatie...",
+            "Asistentul AI verifica in resurse web...",
             "Aproape am terminat, vă rugăm să așteptați..."
         ],
         "citations": "Citații",
