@@ -336,9 +336,10 @@ def invokeTika(value):
     # {"bucketName": "xxx", "namespace": "xxx", "resourceName": "xxx"}
     req = '{"bucketName": "' + bucketName + '", "namespace": "' + namespace + '", "resourceName": "' + resourceName + '"}'
     log( "Tika request: " + req)
-    resp = invoke_client.invoke_function(fnOcid, invoke_function_body=req)
-    log_in_file("tika_resp", resp.data.text) 
-    j = json.loads(resp.data.text)
+    resp = invoke_client.invoke_function(fnOcid, invoke_function_body=req.encode("utf-8"))
+    text = resp.data.text.encode('iso-8859-1').decode('utf-8')
+    log_in_file("tika_resp", text) 
+    j = json.loads(text)
     result = {
         "filename": resourceName,
         "date": UNIQUE_ID,
@@ -783,6 +784,7 @@ def upload_agent_bucket(value, content=None, path=None):
     bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     resourceGenAI = resourceName
+    
     if content:
         resourceGenAI = resourceGenAI + ".convert.txt"
 
@@ -795,7 +797,14 @@ def upload_agent_bucket(value, content=None, path=None):
         region = os.getenv("TF_VAR_region")
         customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
         log( "customized_url_source="+customized_url_source )
+        
+        # Bug in metadata (Python bug.?) Very very bad work-around
+        int_list = list(customized_url_source.encode('utf-8'))
+        # Convert the list of integers to a string
+        customized_url_source = ''.join(chr(x) for x in int_list)
+
         metadata = {'customized_url_source': customized_url_source}
+        # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
 
         file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
         if not content:

@@ -60,3 +60,4 @@ create_service app ingest
 create_service app streamlit
 create_service app tools
 
+sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
