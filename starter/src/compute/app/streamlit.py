@@ -50,8 +50,8 @@ translations = {
     }
 }
 
-lang_code = "ro"
-language = st.sidebar.selectbox(translations[lang_code]["selectLang"], options=["Romanian", "English"], index=0)
+lang_code = "en"
+language = st.sidebar.selectbox(translations[lang_code]["selectLang"], options=["English","Romanian"], index=0)
 lang_code = "en" if language == "English" else "ro"
 
 st.title(translations[lang_code]["title"])
