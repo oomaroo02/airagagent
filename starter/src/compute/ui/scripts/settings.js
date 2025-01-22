@@ -54,14 +54,10 @@ function initSdk(name) {
      */
     const chatWidgetSettings = {
         // ODA URI, only the hostname part should be passed, without the https://
-//        URI: 'oda-88768796dfg769869876fsd7896876e5-da4.data.digitalassistant.oci.oraclecloud.com/', //sample
-//        URI: 'oda-8eb83fb03cc84184883108a2865fa4e5-da4.data.digitalassistant.oci.oraclecloud.com/', //mdODA
-        URI: 'oda-4f59ae2636274b4bbc494828c182d394-da4.data.digitalassistant.oci.oraclecloud.com/', //apODA
+        URI: 'oda-abcdefghijklmnop-da4.data.digitalassistant.oci.oraclecloud.com/', 
         clientAuthEnabled: isClientAuthEnabled,     // Enables client auth enabled mode of connection if set true, no need to pass if set false
         // Channel ID, available in channel settings in ODA UI, optional if client auth enabled
-//        channelId: '5e85645a-5a4b-12f1-c345-8767ff31e1b9', //sample
-//        channelId: '5f74668c-2e9e-42c0-b984-3112bc49d2c0', //mdODA
-        channelId: 'a79ee725-3358-416f-a6fd-2732f8c46ec1', //apODA
+        channelId: 'a123ee456-3358-416f-a6fd-abcdefghijklm', 
         initUserHiddenMessage: "Hi",
         userId: '<userId>',                         // User ID, optional field to personalize user experience
         enableAutocomplete: true,                   // Enables autocomplete suggestions on user input

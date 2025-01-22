@@ -11,7 +11,21 @@ export ARG1=$1
 export ARG2=$2
 export ARG3=$3
 
-if [ -z $ARG1 ] || [ "$ARG1" == "help" ]; then
+if [ -z $ARG1 ]; then
+  COMMAND_FILE=$TARGET_DIR/command.txt 
+  if [ -f $COMMAND_FILE ]; then
+    rm $COMMAND_FILE
+  fi
+  if [ ! -f $COMMAND_FILE ]; then
+    python bin/starter_menu.py 
+    if [ -f $COMMAND_FILE ]; then
+      COMMAND=$(cat $COMMAND_FILE)
+      rm $COMMAND_FILE
+      # Execute the command from bash to avoid issue with terminal prompt
+      eval "$COMMAND"    
+    fi
+  fi
+elif [ "$ARG1" == "help" ]; then
   echo "--- HELP -------------------------------------------------------------------------------------"
   echo "https://www.ocistarter.com/"
   echo "https://www.ocistarter.com/help (tutorial + how to customize)"  
@@ -45,14 +59,13 @@ if [ -z $ARG1 ] || [ "$ARG1" == "help" ]; then
   echo "cat target/destroy.log                - Show last destroy log"
   echo
   exit
-fi
 
-if [ "$ARG1" == "build" ]; then
+elif [ "$ARG1" == "build" ]; then
   if [ "$ARG2" == "" ]; then
     export LOG_NAME=$TARGET_DIR/logs/build.${DATE_POSTFIX}.log
     # Show the log and save it to target/build.log and target/logs
     ln -sf $LOG_NAME $TARGET_DIR/build.log
-    bin/build_all.sh $@ 2>&1 | tee $LOG_NAME
+    bin/build_all.sh ${@:2} 2>&1 | tee $LOG_NAME
   elif [ "$ARG2" == "app" ]; then
     src/app/build_app.sh ${@:2}
   elif [ "$ARG2" == "ui" ]; then
@@ -66,7 +79,7 @@ elif [ "$ARG1" == "destroy" ]; then
   LOG_NAME=$TARGET_DIR/logs/destroy.${DATE_POSTFIX}.log
   # Show the log and save it to target/build.log and target/logs
   ln -sf $LOG_NAME $TARGET_DIR/destroy.log
-  bin/destroy_all.sh $@ 2>&1 | tee $LOG_NAME
+  bin/destroy_all.sh ${@:2} 2>&1 | tee $LOG_NAME
 elif [ "$ARG1" == "ssh" ]; then
   if [ "$ARG2" == "compute" ]; then
     bin/ssh_compute.sh

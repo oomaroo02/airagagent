@@ -75,3 +75,8 @@ echo
 echo "APEX APP"
 echo "https://${APIGW_HOSTNAME}/ords/r/apex_app/apex_app/"
 echo "  User: APEX_APP / $TF_VAR_db_password"
+echo 
+echo "-----------------------------------------------------------------------"
+echo "Oracle Digital Assistant (Web Channel)"
+echo "http://${BASTION_IP}"
+echo 
