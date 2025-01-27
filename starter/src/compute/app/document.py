@@ -1,6 +1,5 @@
 from shared_oci import log
 from shared_oci import log_in_file
-import shared_db
 import shared_oci
 import pathlib
 
@@ -34,7 +33,7 @@ def eventDocument(value):
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.speech(value)
         return
-    elif resourceExtension in [".tif"]:
+    elif resourceExtension in [".tif", [".anonym.pdf"]]:
         # This will create a JSON file in Object Storage that will create a second even with resourceExtension "json" 
         shared_oci.documentUnderstanding(value)
         return
@@ -61,7 +60,7 @@ def eventDocument(value):
         log_in_file("content", result["content"])
         if len(result["content"])==0:
            return 
-        shared_oci.upload_agent_bucket(value, result["content"], result["path"])    
+        shared_oci.upload_agent_bucket(value, result["content"], result["path"], result["localFileName"])    
 
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         # No need to get the content for deleting

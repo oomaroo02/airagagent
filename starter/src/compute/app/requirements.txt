@@ -22,3 +22,8 @@ pdfkit
 
 # Streamlit
 streamlit
+
+# Anonymize
+pdf2image
+Pillow
+opencv-python

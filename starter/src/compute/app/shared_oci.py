@@ -7,6 +7,7 @@ from datetime import datetime
 import pdfkit
 import pathlib
 from oci.object_storage.transfer.constants import MEBIBYTE
+import anonym_pdf
 
 # Constant
 LOG_DIR = '/tmp/app_log'
@@ -734,28 +735,43 @@ def decodeJson(value):
 
     if ".docu/" in resourceName:
         # DocUnderstanding
-        concat_text = ""
-        pages = {}
-        for p in j.get("pages"):
-            pageNumber = p.get("pageNumber")
-            page = ""
-            for l in p.get("lines"):
-                page += l.get("text") + "\n"
-            pages[str(pageNumber)] = page
-            concat_text += page + " "    
         original_resourcename = resourceName[:resourceName.index(".json")][resourceName.index("/results/")+9:]
         original_resourceid = "/n/" + namespace + "/b/" + bucketName + "/o/" + original_resourcename
-        result = {
-            "filename": original_resourcename,
-            "date": UNIQUE_ID,
-            "applicationName": "OCI Document Understanding",
-            "modified": UNIQUE_ID,
-            "contentType": j["documentMetadata"]["mimeType"],
-            "creationDate": UNIQUE_ID,
-            "content": concat_text,
-            "pages": pages,
-            "path": original_resourceid
-        }
+        if original_resourcename.endswith(".anonym.pdf"):
+            anonym_pdf_file = download_file( namespace, bucketName, original_resourcename)
+            pdf_file = anynom_pdf.remove_entities(anonym_pdf_file, j)
+            result = {
+                "filename": original_resourcename,
+                "date": UNIQUE_ID,
+                "applicationName": "Anonymize PDF",
+                "modified": UNIQUE_ID,
+                "contentType": j["documentMetadata"]["mimeType"],
+                "creationDate": UNIQUE_ID,
+                "content": None,
+                "localFileName": pdf_file, 
+                "path": original_resourceid
+            }   
+        else: 
+            concat_text = ""
+            pages = {}
+            for p in j.get("pages"):
+                pageNumber = p.get("pageNumber")
+                page = ""
+                for l in p.get("lines"):
+                    page += l.get("text") + "\n"
+                pages[str(pageNumber)] = page
+                concat_text += page + " "    
+            result = {
+                "filename": original_resourcename,
+                "date": UNIQUE_ID,
+                "applicationName": "OCI Document Understanding",
+                "modified": UNIQUE_ID,
+                "contentType": j["documentMetadata"]["mimeType"],
+                "creationDate": UNIQUE_ID,
+                "content": concat_text,
+                "pages": pages,
+                "path": original_resourceid
+            }            
     else:
         # Speech
         original_resourcename = resourceName[:resourceName.index(".json")][resourceName.index("bucket_")+7:]
@@ -775,7 +791,7 @@ def decodeJson(value):
 
 ## -- upload_agent_bucket ------------------------------------------------------------------
 
-def upload_agent_bucket(value, content=None, path=None):
+def upload_agent_bucket(value, content=None, path=None, localFileName=None):
 
     log( "<upload_agent_bucket>")
     eventType = value["eventType"]
@@ -806,17 +822,20 @@ def upload_agent_bucket(value, content=None, path=None):
         metadata = {'customized_url_source': customized_url_source}
         # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
 
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
-        if not content:
-            contentType = value["contentType"]
-            resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-            with open(file_name, 'wb') as f:
-                for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
-                    f.write(chunk)
+        if localFileName:
+            file_name = localFileName
         else:
-            contentType = "text/html"
-            with open(file_name, 'w') as f:
-                f.write(content)
+            file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
+            if not content:
+                contentType = value["contentType"]
+                resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
+                with open(file_name, 'wb') as f:
+                    for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
+                        f.write(chunk)
+            else:
+                contentType = "text/html"
+                with open(file_name, 'w') as f:
+                    f.write(content)
 
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
@@ -844,3 +863,17 @@ def genai_agent_datasource_ingest():
 		    description=name
         ))
     log( "</genai_agent_datasource_ingest>")             
+
+
+## -- download_file -------------------------------------------------------------------------------
+
+def download_file(namespace,bucketName,resourceName):
+    log( "<download_file>")
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
+    file_name = LOG_DIR+"/"+UNIQUE_ID+".pdf"
+    with open(file_name, 'wb') as f:
+        for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
+            f.write(chunk)
+    log( "</download_file>")            
+    return file_name

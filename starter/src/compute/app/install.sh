@@ -4,8 +4,12 @@ cd $SCRIPT_DIR
 
 . ./env.sh
 
-# Python Server
+# Python 
 sudo dnf install -y python39 python39-devel
+
+# Anonymize
+sudo dnf install -y poppler-utils mesa-libGL
+
 sudo pip3.9 install pip --upgrade
 pip3.9 install -r requirements.txt
 
@@ -61,3 +65,4 @@ create_service app streamlit
 create_service app tools
 
 sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
+
