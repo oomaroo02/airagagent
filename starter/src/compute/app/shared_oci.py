@@ -737,7 +737,7 @@ def decodeJson(value):
         # DocUnderstanding
         original_resourcename = resourceName[:resourceName.index(".json")][resourceName.index("/results/")+9:]
         original_resourceid = "/n/" + namespace + "/b/" + bucketName + "/o/" + original_resourcename
-        if original_resourcename.endswith(".pdf.anonym"):
+        if original_resourcename.endswith(".anonym.pdf"):
             anonym_pdf_file = download_file( namespace, bucketName, original_resourcename)
             pdf_file = anynom_pdf.remove_entities(anonym_pdf_file, j)
             result = {
