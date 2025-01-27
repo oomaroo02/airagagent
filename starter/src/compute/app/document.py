@@ -26,16 +26,17 @@ def eventDocument(value):
      
     # Content 
     result = { "content": "-" }
-    if resourceExtension in [".pdf", ".txt", ".csv", ".md"]:
+    if resourceExtension in [".tif"] or resourceName.endswith(".anonym.pdf"):
+        # This will create a JSON file in Object Storage that will create a second even with resourceExtension "json" 
+        shared_oci.documentUnderstanding(value)
+        return
+    elif resourceExtension in [".pdf", ".txt", ".csv", ".md"]:
+        # Simply copy the file to the agent bucket
         shared_oci.upload_agent_bucket(value)
         return
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.speech(value)
-        return
-    elif resourceExtension in [".tif", [".anonym.pdf"]]:
-        # This will create a JSON file in Object Storage that will create a second even with resourceExtension "json" 
-        shared_oci.documentUnderstanding(value)
         return
     elif resourceExtension in [".sitemap"]:
         # This will create a PDFs file in Object Storage with the content of each site (line) ".sitemap" 
@@ -60,7 +61,7 @@ def eventDocument(value):
         log_in_file("content", result["content"])
         if len(result["content"])==0:
            return 
-        shared_oci.upload_agent_bucket(value, result["content"], result["path"], result["localFileName"])    
+        shared_oci.upload_agent_bucket(value, result["content"], result["path"], result.get("localFileName"))    
 
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         # No need to get the content for deleting

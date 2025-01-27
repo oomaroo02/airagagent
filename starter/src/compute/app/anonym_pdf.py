@@ -20,7 +20,7 @@ def remove_entities(anonym_pdf_file, j):
                 (width/2, height/2, 10, 10)
             ]
             draw_boxes(images[0], boxes)
-    pdf_file= anonym_pdf_file.replace(".anonym.pdf", ".pdf")      
+    pdf_file= anonym_pdf_file.replace(".anomym.pdf", ".pdf")      
     saveAsPDF(pdf_file, images )  
     return pdf_file
 
