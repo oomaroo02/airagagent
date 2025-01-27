@@ -2,6 +2,7 @@ import streamlit as st
 import oci
 import os
 from streamlit_spinner import spinner
+import urllib
 
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 config = {'region': signer.region, 'tenancy': signer.tenancy_id}
@@ -136,9 +137,10 @@ else:
             if response_content.citations:
                 with st.expander(translations[lang_code]["citations"]):  # Collapsible section
                     for i, citation in enumerate(response_content.citations, start=1):
+                        source_url = citation.source_location.url.replace( " ", "%20" )
                         # st.write(f"**Citation {i}:**")  # Add citation number
                         st.write(f"**{translations[lang_code]['citation']} {i}:**") 
-                        st.markdown(f"**{translations[lang_code]['source']}:** [{citation.source_location.url}]({citation.source_location.url})") 
+                        st.markdown(f"**{translations[lang_code]['source']}:** [{source_url}]({source_url})") 
                         st.text_area(translations[lang_code]["citation_text"], value=citation.source_text, height=200) # Use st.text_area for better formatting
         else:
             st.error(f"API request failed with status: {execute_session_response.status}")

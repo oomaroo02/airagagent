@@ -21,10 +21,6 @@ get_id_from_tfstate "AGENT_ENDPOINT_OCID" "starter_agent_endpoint"
 get_id_from_tfstate "APP_SUBNET_OCID" "starter_app_subnet" 
 get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet" 
 
-echo 
-echo "--------------------------"
-echo "OCI SEARCH LAB Environment"
-echo "--------------------------"
 # echo "TENANCY_NAME=$TENANCY_NAME"
 echo
 echo "-- STREAMING CONNECTION --------------------------"
@@ -52,9 +48,9 @@ ssh -o StrictHostKeyChecking=no -i $TF_VAR_ssh_private_path opc@$BASTION_IP "exp
 sleep 5
 oci os object bulk-upload -ns $TF_VAR_namespace -bn ${TF_VAR_prefix}-public-bucket --src-dir ../sample_files --overwrite --content-type auto
 
-echo "-----------------------------------------------------------------------"
-echo "(experimental) Cohere with Tools and GenAI Agent:"
-echo "http://${BASTION_IP}:8081/"
+# echo "-----------------------------------------------------------------------"
+# echo "(experimental) Cohere with Tools and GenAI Agent:"
+# echo "http://${BASTION_IP}:8081/"
 echo 
 echo "-----------------------------------------------------------------------"
 echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
