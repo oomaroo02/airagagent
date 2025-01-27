@@ -58,10 +58,13 @@ def eventDocument(value):
         else:
             result = shared_oci.invokeTika(value)
 
-        log_in_file("content", result["content"])
-        if len(result["content"])==0:
-           return 
-        shared_oci.upload_agent_bucket(value, result["content"], result["path"], result.get("localFileName"))    
+        if result.get("localFileName"):
+            shared_oci.upload_agent_bucket(value, None, result["path"], result.get("localFileName"))    
+        else:
+            log_in_file("content", result["content"])
+            if len(result["content"])==0:
+                return 
+            shared_oci.upload_agent_bucket(value, result["content"], result["path"])    
 
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         # No need to get the content for deleting

@@ -739,7 +739,7 @@ def decodeJson(value):
         original_resourceid = "/n/" + namespace + "/b/" + bucketName + "/o/" + original_resourcename
         if original_resourcename.endswith(".anonym.pdf"):
             anonym_pdf_file = download_file( namespace, bucketName, original_resourcename)
-            pdf_file = anynom_pdf.remove_entities(anonym_pdf_file, j)
+            pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
             result = {
                 "filename": original_resourcename,
                 "date": UNIQUE_ID,
@@ -823,6 +823,7 @@ def upload_agent_bucket(value, content=None, path=None, localFileName=None):
         # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
 
         if localFileName:
+            contentType = value["contentType"]
             file_name = localFileName
         else:
             file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
@@ -871,7 +872,7 @@ def download_file(namespace,bucketName,resourceName):
     log( "<download_file>")
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-    file_name = LOG_DIR+"/"+UNIQUE_ID+".pdf"
+    file_name = LOG_DIR+"/"+resourceName
     with open(file_name, 'wb') as f:
         for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
             f.write(chunk)
