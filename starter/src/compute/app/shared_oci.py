@@ -514,13 +514,17 @@ def belgian(value):
 
 def delete_bucket_folder(namespace, bucketName, prefix):
     log( "<delete_bucket_folder> "+prefix)
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
-    response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
-    for object_file in response.data.objects:
-        f = object_file.name
-        log( "<delete_bucket_folder> Deleting: " + f )
-        os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
-        log( "<delete_bucket_folder> Deleted: " + f )
+    try:
+        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
+        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+        for object_file in response.data.objects:
+            f = object_file.name
+            log( "<delete_bucket_folder> Deleting: " + f )
+            os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
+            log( "<delete_bucket_folder> Deleted: " + f )
+    except:
+        log("Exception: delete_bucket_folder") 
+        log(traceback.format_exc())            
     log( "</delete_bucket_folder>" )
 
 ## -- speech ----------------------------------------------------------------
@@ -643,7 +647,6 @@ def sitemap(value):
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
         # Delete previous speech conversion 
         delete_bucket_folder( namespace, bucketGenAI, prefix )
-
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
         fileList = []
 
@@ -740,17 +743,10 @@ def decodeJson(value):
         if original_resourcename.endswith(".anonym.pdf"):
             anonym_pdf_file = download_file( namespace, bucketName, original_resourcename)
             pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
-            result = {
-                "filename": original_resourcename,
-                "date": UNIQUE_ID,
-                "applicationName": "Anonymize PDF",
-                "modified": UNIQUE_ID,
-                "contentType": j["documentMetadata"]["mimeType"],
-                "creationDate": UNIQUE_ID,
-                "content": None,
-                "localFileName": pdf_file, 
-                "path": original_resourceid
-            }   
+            # Upload the anonymize file in the public bucket.
+            upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+            upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=pdf_file, file_path=file_name, part_size=2 * MEBIBYTE, content_type="application/pdf")
+            return None  
         else: 
             concat_text = ""
             pages = {}
@@ -789,9 +785,19 @@ def decodeJson(value):
     log( "</decodeJson>")
     return result
 
+## -- get_upload_metadata ------------------------------------------------------------------
+
+def get_upload_metadata( customized_url_source ):
+    # Bug in metadata (Python bug.?) Very very bad work-around
+    int_list = list(customized_url_source.encode('utf-8'))
+    # Convert the list of integers to a string
+    customized_url_source = ''.join(chr(x) for x in int_list)
+    return {'customized_url_source': customized_url_source}
+
+
 ## -- upload_agent_bucket ------------------------------------------------------------------
 
-def upload_agent_bucket(value, content=None, path=None, localFileName=None):
+def upload_agent_bucket(value, content=None, path=None):
 
     log( "<upload_agent_bucket>")
     eventType = value["eventType"]
@@ -813,30 +819,21 @@ def upload_agent_bucket(value, content=None, path=None, localFileName=None):
         region = os.getenv("TF_VAR_region")
         customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
         log( "customized_url_source="+customized_url_source )
-        
-        # Bug in metadata (Python bug.?) Very very bad work-around
-        int_list = list(customized_url_source.encode('utf-8'))
-        # Convert the list of integers to a string
-        customized_url_source = ''.join(chr(x) for x in int_list)
+        metadata = get_upload_metadata( customized_url_source )
 
-        metadata = {'customized_url_source': customized_url_source}
         # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
 
-        if localFileName:
+        file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
+        if not content:
             contentType = value["contentType"]
-            file_name = localFileName
+            resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
+            with open(file_name, 'wb') as f:
+                for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
+                    f.write(chunk)
         else:
-            file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
-            if not content:
-                contentType = value["contentType"]
-                resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-                with open(file_name, 'wb') as f:
-                    for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
-                        f.write(chunk)
-            else:
-                contentType = "text/html"
-                with open(file_name, 'w') as f:
-                    f.write(content)
+            contentType = "text/html"
+            with open(file_name, 'w') as f:
+                f.write(content)
 
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)

@@ -50,28 +50,32 @@ def add_box( boxes, p, width, height, text, type ):
 def get_box( p, width, height, text, type ):
     shared_oci.log( "<get_box>" + text)
     if type=="PERSON":
-        color = "#880"
+        color = "#440"
     elif type=="DATETIME":
         return None 
     elif type=="LOCATION":
-        color = "#080"
+        color = "#040"
     elif type=="EMAIL":
-        color = "#800"
+        color = "#400"
     elif type=="ORGANIZATION":
-        color = "#088"
+        color = "#044"
     elif type=="QUANTITY":
         return None       
     else:
         color = "#000"
     for line in p.get("lines"):
-         line_text = line.get("text")
-         if text in line_text:
-             c = line.get("confidence")
-             v = line.get("boundingPolygon").get("normalizedVertices")
-             box= ( int(v[0].get("x")*width), int(v[0].get("y")*height), int(v[2].get("x")*width), int(v[3].get("y")*height), color )
-             shared_oci.log( "<get_box>text found: " + text + " / " + str(c) + " / " + str(box)   )                         
-             return box
-    shared_oci.log( "ERROR: text not found: " + text )         
+        line_text = line.get("text")
+        if text in line_text:
+            if line.get("boxed"):
+                shared_oci.log( "<get_box> WARNING: already boxed. Continuing to search." )         
+            else:  
+               c = line.get("confidence")
+               v = line.get("boundingPolygon").get("normalizedVertices")
+               box= ( int(v[0].get("x")*width), int(v[0].get("y")*height), int(v[2].get("x")*width), int(v[3].get("y")*height), color )
+               shared_oci.log( "<get_box>text found: " + text + " / " + str(c) + " / " + str(box)   )                         
+               line["boxed"] = True
+               return box
+    shared_oci.log( "<get_box> ERROR: text not found: " + text )         
     return None         
 
 # ---------------------------------------------------------------------------
