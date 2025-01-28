@@ -50,15 +50,15 @@ def add_box( boxes, p, width, height, text, type ):
 def get_box( p, width, height, text, type ):
     shared_oci.log( "<get_box>" + text)
     if type=="PERSON":
-        color = "#440"
+        color = "#330"
     elif type=="DATETIME":
         return None 
     elif type=="LOCATION":
-        color = "#040"
+        color = "#030"
     elif type=="EMAIL":
-        color = "#400"
+        color = "#300"
     elif type=="ORGANIZATION":
-        color = "#044"
+        color = "#033"
     elif type=="QUANTITY":
         return None       
     else:

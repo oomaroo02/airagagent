@@ -744,8 +744,9 @@ def decodeJson(value):
             anonym_pdf_file = download_file( namespace, bucketName, original_resourcename)
             pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
             # Upload the anonymize file in the public bucket.
+            resourceName = original_resourcename.replace(".anonym.pdf", ".pdf") 
             upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-            upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=pdf_file, file_path=file_name, part_size=2 * MEBIBYTE, content_type="application/pdf")
+            upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf")
             return None  
         else: 
             concat_text = ""
@@ -839,8 +840,10 @@ def upload_agent_bucket(value, content=None, path=None):
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<upload_agent_bucket> Delete")
-        os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
-
+        try: 
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
+        except:
+           log("Exception: Delete failed: " + resourceGenAI)     
     log( "</upload_agent_bucket>")                      
 
 ## -- genai_agent_datasource_ingest -----------------------------------------------------------

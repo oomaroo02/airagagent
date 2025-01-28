@@ -1,0 +1,34 @@
+exportedRestServices:
+- endpoint: "https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20240531/agentEndpoints/{agentEndpointId}/sessions/{sessionId}/actions/execute"
+  name: "labAgentAsk"
+  type: "REST"
+  authType: "resourcePrincipal"
+  restServiceMethods:
+  - restServiceMethodType: "POST"
+    contentType: "application/json"
+    statusCode: 200
+    methodIncrementId: 0
+    requestBody: "{\n    \"userMessage\": \"What is AI Agent?\",\n    \"shouldStream\": false\n}"
+    mockResponsePayload: "{}"
+    restServiceParams:
+    - type: "path"
+      key: "sessionId"
+      value: "ocid1.genaiagentsession.oc1.eu-frankfurt-1.amaaaaaa7mjirbaamlmm2u3fvpgdwi33b6gswq42mzp54zlx3iot4sz4jdwq"
+    - type: "path"
+      key: "agentEndpointId"
+      value: "ocid1.genaiagentendpoint.oc1.eu-frankfurt-1.amaaaaaa2xxap7yacwkwcgfurr65tq4o6ablcch7fe32iparv67thnnnfvxq"
+- endpoint: "https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20240531/agentEndpoints/{agentEndpointId}/sessions"
+  name: "labAgentConnect"
+  type: "REST"
+  authType: "resourcePrincipal"
+  restServiceMethods:
+  - restServiceMethodType: "POST"
+    contentType: "application/json"
+    statusCode: 200
+    methodIncrementId: 0
+    requestBody: "{\n    \"idleTimeoutInSeconds\": 3600\n}"
+    mockResponsePayload: "{\n    \"displayName\": null,\n    \"welcomeMessage\": null,\n    \"timeUpdated\": null,\n    \"description\": null,\n    \"timeCreated\": \"2025-01-21T14:17:26.072Z\",\n    \"id\": \"ocid1.genaiagentsession.oc1.eu-frankfurt-1.amaaaaaa7mjirbaamlmm2u3fvpgdwi33b6gswq42mzp54zlx3iot4sz4jdwq\"\n}"
+    restServiceParams:
+    - type: "path"
+      key: "agentEndpointId"
+      value: "ocid1.genaiagentendpoint.oc1.eu-frankfurt-1.amaaaaaa2xxap7yacwkwcgfurr65tq4o6ablcch7fe32iparv67thnnnfvxq"
