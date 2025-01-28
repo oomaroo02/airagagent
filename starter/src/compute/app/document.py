@@ -58,9 +58,7 @@ def eventDocument(value):
         else:
             result = shared_oci.invokeTika(value)
 
-        if result.get("localFileName"):
-            shared_oci.upload_agent_bucket(value, None, result["path"], result.get("localFileName"))    
-        else:
+        if result:
             log_in_file("content", result["content"])
             if len(result["content"])==0:
                 return 
