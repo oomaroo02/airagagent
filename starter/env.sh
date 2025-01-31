@@ -3,7 +3,7 @@ PROJECT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export BIN_DIR=$PROJECT_DIR/bin
 
 # Env Variables
-export TF_VAR_prefix="a1"
+export TF_VAR_prefix="agext"
 
 export TF_VAR_ui_type="html"
 export TF_VAR_db_type="autonomous"
