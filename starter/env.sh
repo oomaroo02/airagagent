@@ -7,7 +7,7 @@ export TF_VAR_prefix="a1"
 
 export TF_VAR_ui_type="html"
 export TF_VAR_db_type="autonomous"
-export TF_VAR_license_model="LICENSE_INCLUDED"
+export TF_VAR_license_model="__TO_FILL__"
 export TF_VAR_deploy_type="function"
 export TF_VAR_language="java"
 export TF_VAR_db_user="admin"
