@@ -14,7 +14,7 @@ def remove_entities(anonym_pdf_file, j):
         # images[idx] = images[idx].convert('RGB')
         draw_boxes(images[idx], pages_boxes[idx])
     pdf_file = anonym_pdf_file.replace(".anonym.pdf", ".pdf")    
-    saveAsPDF( pdf_file, images )  
+    shared_oci.save_as_pdf( pdf_file, images )  
     shared_oci.log( "</remove_entities> pdf_file created: "+ pdf_file )
     return pdf_file
 
@@ -23,15 +23,6 @@ def draw_boxes( image: Image.Image, boxes ):
     for i, (x1, y1, x2, y2, color) in enumerate(boxes):
         img1 = ImageDraw.Draw(image) 
         img1.rectangle( [(x1, y1), (x2, y2)], color )
-
-# ---------------------------------------------------------------------------
-def saveAsPDF( file_name, images ):
-    # Save image with PIL
-    if len(images) == 1:
-        images[0].save(file_name)
-    else:
-        im = images.pop(0)
-        im.save(file_name, save_all=True,append_images=images)
 
 # ---------------------------------------------------------------------------
 def add_box( boxes, p, width, height, text, type ):
@@ -138,4 +129,4 @@ if __name__ == "__main__":
             (width/2, height/2, 10, 10)
         ]
         draw_boxes( image, boxes)
-    saveAsPDF( "anonymize/temp.pdf", images)
+    shared_oci.save_as_pdf( "anonymize/temp.pdf", images)

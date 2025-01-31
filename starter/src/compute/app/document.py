@@ -34,6 +34,9 @@ def eventDocument(value):
         # Simply copy the file to the agent bucket
         shared_oci.upload_agent_bucket(value)
         return
+    # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
+    #    shared_oci.image2pdf(value)
+    #    return    
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.speech(value)
@@ -51,10 +54,10 @@ def eventDocument(value):
         return
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
-        if resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
-            result = shared_oci.vision(value)
-        elif resourceExtension in [".json"]:
+        if resourceExtension in [".json"]:
             result = shared_oci.decodeJson(value)
+        elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
+             result = shared_oci.vision(value)
         else:
             result = shared_oci.invokeTika(value)
 

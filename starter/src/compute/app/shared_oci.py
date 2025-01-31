@@ -8,6 +8,7 @@ import pdfkit
 import pathlib
 from oci.object_storage.transfer.constants import MEBIBYTE
 import anonym_pdf
+from PIL import Image
 
 # Constant
 LOG_DIR = '/tmp/app_log'
@@ -878,3 +879,50 @@ def download_file(namespace,bucketName,resourceName):
             f.write(chunk)
     log( "</download_file>")            
     return file_name
+
+## -- save_as_pdf -------------------------------------------------------------------------------------
+def save_as_pdf( file_name, images ):
+    # Save image with PIL
+    if len(images) == 1:
+        images[0].save(file_name)
+    else:
+        im = images.pop(0)
+        im.save(file_name, save_all=True,append_images=images)
+
+# ---------------------------------------------------------------------------
+def image2pdf(value, content=None, path=None):
+    log( "<image2pdf>")
+    eventType = value["eventType"]
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+    resourceName = value["data"]["resourceName"]
+    resourceId = value["data"]["resourceId"]
+    resourceGenAI = resourceName+".pdf"
+  
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        # Set the original URL source (GenAI Agent)
+        region = os.getenv("TF_VAR_region")
+        customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
+        log( "customized_url_source="+customized_url_source )
+        metadata = get_upload_metadata( customized_url_source )
+
+        # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
+
+        image_file = download_file( namespace, bucketName, resourceName)     
+        image = Image.open(image_file)
+        pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
+        save_as_pdf( pdf_file, [image] )         
+
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
+        log( "Uploaded PDF "+resourceGenAI )
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
+        log( "<upload_agent_bucket> Delete")
+        try: 
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
+        except:
+           log("Exception: Delete failed: " + resourceGenAI)   
+    log( "</image2pdf>")
