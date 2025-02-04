@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ "$PROJECT_DIR" = "" ]; then
+  echo "Error: PROJECT_DIR not set. Please use starter.sh."
+  exit 1
+fi
+
 if declare -p | grep -q "__TO_FILL__"; then
   title "CONFIG.SH"
   
@@ -97,6 +102,21 @@ if declare -p | grep -q "__TO_FILL__"; then
       read -r -p "Enter your OCI Auth token (TF_VAR_auth_token) " TF_VAR_auth_token 
       store_env_sh TF_VAR_auth_token $TF_VAR_auth_token
     fi      
+  fi
+
+  # LICENSE_MODEL
+  if [ "$TF_VAR_license_model" == "__TO_FILL__" ]; then
+    echo "License Model (TF_VAR_license_model)."
+    while [ "${!1}" == "__TO_FILL__" ]; do
+      read -r -p "Enter BRING_YOUR_OWN_LICENSE or LICENSE_INCLUDED: " response
+      if [[ $response == "BRING_YOUR_OWN_LICENSE" ]] || [[ $response == "LICENSE_INCLUDED" ]] ; then
+        export TF_VAR_license_model=$response
+        store_env_sh TF_VAR_license_model $response
+      else
+        echo "Wrong value $response"
+        echo            
+      fi
+    done     
   fi
 
   # OIC_APPID

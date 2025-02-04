@@ -5,4 +5,4 @@ cd $SCRIPT_DIR
 sudo systemctl restart ingest
 sudo systemctl restart rest
 sudo systemctl restart streamlit
-sudo systemctl restart streamlit_tools
+sudo systemctl restart tools

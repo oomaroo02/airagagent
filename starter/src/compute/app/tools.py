@@ -88,6 +88,14 @@ def search_files(question):
     list_object.append({f"response": resp_chat.data.message.content.text, "source_file_name": source_file_name })        
     return list_object
 
+# Send email 
+def send_mail(title, content):
+    log( "<email>" )
+    log( f"title: {title}" )
+    log( f"content: {content}" )
+    status = ["Mail sent"]
+    return [ {f"email_status": status} ]
+
 #Tool parameter definition
 get_file_param = CohereParameterDefinition()
 get_file_param.description = "file name"
@@ -98,6 +106,16 @@ search_files_param = CohereParameterDefinition()
 search_files_param.description = "question"
 search_files_param.type = "str"
 search_files_param.is_required = True
+
+email_title_param = CohereParameterDefinition()
+email_title_param.description = "email title"
+email_title_param.type = "str"
+email_title_param.is_required = True
+
+email_content_param = CohereParameterDefinition()
+email_content_param.description = "email content"
+email_content_param.type = "str"
+email_content_param.is_required = True
 
 #Tool definitions
 tool1 = CohereTool()
@@ -118,15 +136,24 @@ tool3.parameter_definitions = {
     "question": search_files_param
 }
 
+tool4 = CohereTool()
+tool4.name = "send_mail"
+tool4.description = "send a mail"
+tool4.parameter_definitions = {
+    "title": email_title_param,
+    "content": email_content_param
+}
+
+
 #list of tools
-tools = [tool1, tool2, tool3]
+tools = [tool1, tool2, tool3, tool4]
 
 functions_map = {
     "list_files": list_files,
     "get_file": get_file,
-    "search_files": search_files    
+    "search_files": search_files,   
+    "send_mail": send_mail        
 }
-
 
 # streamlit
 st.title('Cohere Tools with OCI GenAI')
