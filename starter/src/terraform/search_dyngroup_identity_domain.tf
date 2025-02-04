@@ -16,10 +16,15 @@ resource "oci_identity_domains_dynamic_resource_group" "search-bastion-dyngroup"
     matching_rule = "ALL {instance.id = '${oci_core_instance.starter_bastion.id}'}"
     schemas = ["urn:ietf:params:scim:schemas:oracle:idcs:DynamicResourceGroup"]
 }
-*/
 
 resource "time_sleep" "wait_30_seconds" {
   depends_on = [ oci_identity_domains_dynamic_resource_group.search-bastion-dyngroup, oci_identity_domains_dynamic_resource_group.search-fn-dyngroup ]
+  create_duration = "30s"
+}
+*/
+
+resource "time_sleep" "wait_30_seconds" {
+  depends_on = [ oci_identity_domains_dynamic_resource_group.search-fn-dyngroup ]
   create_duration = "30s"
 }
 
