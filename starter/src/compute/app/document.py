@@ -37,6 +37,9 @@ def eventDocument(value):
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    shared_oci.image2pdf(value)
     #    return    
+    # elif resourceExtension in [".docx", ".doc"]:
+    #    shared_oci.office2pdf(value)
+    #    return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.speech(value)

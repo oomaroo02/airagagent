@@ -5,10 +5,11 @@ import requests
 import oci
 from datetime import datetime
 import pdfkit
-import pathlib
+from pathlib import Path
 from oci.object_storage.transfer.constants import MEBIBYTE
 import anonym_pdf
 from PIL import Image
+import subprocess
 
 # Constant
 LOG_DIR = '/tmp/app_log'
@@ -787,15 +788,27 @@ def decodeJson(value):
     log( "</decodeJson>")
     return result
 
+## -- get_metadata_from_resource_id --------------------------------------------------------
+def get_metadata_from_resource_id( resourceId ):
+    region = os.getenv("TF_VAR_region")
+    customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
+    log( "customized_url_source="+customized_url_source )
+    return get_upload_metadata( customized_url_source )
+
+## -- get_upload_metadata ------------------------------------------------------------------
+def has_non_ascii(input_string):
+    return not all(ord(char) < 128 for char in input_string)
+
 ## -- get_upload_metadata ------------------------------------------------------------------
 
 def get_upload_metadata( customized_url_source ):
-    # Bug in metadata (Python bug.?) Very very bad work-around
-    int_list = list(customized_url_source.encode('utf-8'))
-    # Convert the list of integers to a string
-    customized_url_source = ''.join(chr(x) for x in int_list)
+    # Very bad trick if the string is already encoded...
+    if has_non_ascii( customized_url_source ):
+        # Bug in metadata (Python bug.?) Very very bad work-around
+        int_list = list(customized_url_source.encode('utf-8'))
+        # Convert the list of integers to a string
+        customized_url_source = ''.join(chr(x) for x in int_list)
     return {'customized_url_source': customized_url_source}
-
 
 ## -- upload_agent_bucket ------------------------------------------------------------------
 
@@ -822,8 +835,6 @@ def upload_agent_bucket(value, content=None, path=None):
         customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
         log( "customized_url_source="+customized_url_source )
         metadata = get_upload_metadata( customized_url_source )
-
-        # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
 
         file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
         if not content:
@@ -866,6 +877,40 @@ def genai_agent_datasource_ingest():
         ))
     log( "</genai_agent_datasource_ingest>")             
 
+## -- office2pdf ------------------------------------------------------------------
+
+def office2pdf(value):
+    log( "<office2pdf>")
+    eventType = value["eventType"]
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    resourceName = value["data"]["resourceName"]
+    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+    resourceId = value["data"]["resourceId"]
+    resourceGenAI = Path(resourceName).with_suffix('.pdf')
+      
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        office_file = download_file( namespace, bucketName, resourceName)
+        cmd = 'libreoffice24.8 --convert-to pdf --outdir'.split() + [LOG_DIR, office_file]
+        p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        p.wait(timeout=30)
+        stdout, stderr = p.communicate()
+        if stderr:
+            raise subprocess.SubprocessError(stderr)
+        metadata = get_metadata_from_resource_id( resourceId )
+        pdf_file = Path(office_file).with_suffix('.pdf')
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
+        log( "Uploaded PDF "+resourceGenAI )
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
+        log( "<office2pdf> Delete")
+        try: 
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
+        except:
+           log("Exception: Delete failed: " + resourceGenAI)   
+    log( "</office2pdf>")
 
 ## -- download_file -------------------------------------------------------------------------------
 
@@ -904,12 +949,7 @@ def image2pdf(value, content=None, path=None):
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         # Set the original URL source (GenAI Agent)
-        region = os.getenv("TF_VAR_region")
-        customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
-        log( "customized_url_source="+customized_url_source )
-        metadata = get_upload_metadata( customized_url_source )
-
-        # metadata = {'customized_url_source': customized_url_source.encode('utf-8').decode('unicode-escape')}
+        metadata = get_metadata_from_resource_id( resourceId )
 
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file)

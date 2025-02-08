@@ -18,6 +18,17 @@ wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmlt
 sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
+# LibreOffice (convert docx to PDF)
+if [ "${INSTALL_LIBREOFFICE}" == "true" ]; then
+    cd /tmp
+    export LIBREOFFICE_VERSION=24.8.4
+    wget https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
+    tar -xzvf LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
+    cd LibreOffice*/RPMS
+    sudo dnf install *.rpm -y
+    libreoffice24.8 --version
+fi 
+
 # Store the config in APEX
 export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
