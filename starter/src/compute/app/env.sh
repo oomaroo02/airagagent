@@ -16,4 +16,4 @@ export TF_VAR_prefix="##TF_VAR_prefix##"
 export TF_VAR_namespace="##TF_VAR_namespace##"
 
 # LibreOffice
-export INSTALL_LIBREOFFICE=##INSTALL_LIBREOFFICE##
+export INSTALL_LIBREOFFICE="##INSTALL_LIBREOFFICE##"
