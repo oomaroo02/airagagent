@@ -5,6 +5,9 @@ resource "oci_identity_domains_dynamic_resource_group" "search-fn-dyngroup" {
     idcs_endpoint = local.idcs_url
     matching_rule = "ALL {resource.type = 'fnfunc', resource.compartment.id = '${local.lz_app_cmp_ocid}'}"
     schemas = ["urn:ietf:params:scim:schemas:oracle:idcs:DynamicResourceGroup"]
+    lifecycle {
+      ignore_changes = [ schemas ]
+    }
 }
 
 /*
@@ -44,6 +47,7 @@ resource "oci_identity_policy" "starter_search_policy" {
         "allow any-user to read object-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
         "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where ALL { request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}', request.permission = 'PAR_MANAGE' }"
     ]
+
     /*
     statements = [
         "allow dynamic-group ${var.idcs_domain_name}/${var.prefix}-fn-dyngroup to manage objects in compartment id ${local.lz_serv_cmp_ocid}",

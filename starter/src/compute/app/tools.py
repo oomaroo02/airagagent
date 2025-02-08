@@ -138,7 +138,7 @@ tool3.parameter_definitions = {
 
 tool4 = CohereTool()
 tool4.name = "send_mail"
-tool4.description = "send a mail"
+tool4.description = "send an e-mail"
 tool4.parameter_definitions = {
     "title": email_title_param,
     "content": email_content_param
@@ -194,7 +194,7 @@ if user_input:
         chat_request.top_p = 0.75
         chat_request.api_format = "COHERE"
         chat_request.is_stream = False
-        chat_request.preamble_override = "When a question is irrelevant or unrelated to the available tools, please choose to directly answer it"
+        chat_request.preamble_override = "When a question is irrelevant or unrelated to the available tools, please use the search_ to directly answer it"
 
         chat_request.message = user_input
 
