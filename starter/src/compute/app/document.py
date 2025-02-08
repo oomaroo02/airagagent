@@ -2,6 +2,7 @@ from shared_oci import log
 from shared_oci import log_in_file
 import shared_oci
 import pathlib
+import os
 
 ## -- getFileExtension ------------------------------------------------------
 
@@ -37,9 +38,9 @@ def eventDocument(value):
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    shared_oci.image2pdf(value)
     #    return    
-    # elif resourceExtension in [".docx", ".doc"]:
-    #    shared_oci.office2pdf(value)
-    #    return        
+    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt""] and os.getenv("INSTALL_LIBREOFFICE") == "true":
+        shared_oci.office2pdf(value)
+        return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.speech(value)

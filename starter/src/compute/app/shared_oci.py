@@ -887,7 +887,7 @@ def office2pdf(value):
     resourceName = value["data"]["resourceName"]
     bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceId = value["data"]["resourceId"]
-    resourceGenAI = Path(resourceName).with_suffix('.pdf')
+    resourceGenAI = str(Path(resourceName).with_suffix('.pdf'))
       
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
 
@@ -897,11 +897,16 @@ def office2pdf(value):
         p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         p.wait(timeout=30)
         stdout, stderr = p.communicate()
-        if stderr:
+        pdf_file = str(Path(office_file).with_suffix('.pdf'))
+        if os.path.exists(pdf_file):
+            log( f"<office2pdf> pdf found {pdf_file}")
+        else:
             raise subprocess.SubprocessError(stderr)
         metadata = get_metadata_from_resource_id( resourceId )
-        pdf_file = Path(office_file).with_suffix('.pdf')
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        log( "pdf_file=" + pdf_file )
+        log( "metadata=" + str(metadata) )
+        log( "resourceGenAI=" + resourceGenAI )
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
         log( "Uploaded PDF "+resourceGenAI )
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
