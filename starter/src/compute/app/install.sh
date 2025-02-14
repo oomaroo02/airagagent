@@ -21,7 +21,7 @@ mv *.rpm /tmp
 # LibreOffice (convert docx to PDF)
 if [ "${INSTALL_LIBREOFFICE}" != "" ]; then
     cd /tmp
-    export LIBREOFFICE_VERSION=24.8.4
+    export LIBREOFFICE_VERSION=$INSTALL_LIBREOFFICE
     wget https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
     tar -xzvf LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
     cd LibreOffice*/RPMS
