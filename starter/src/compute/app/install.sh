@@ -5,7 +5,7 @@ cd $SCRIPT_DIR
 . ./env.sh
 
 # Python 
-sudo dnf install -y python39 python39-devel
+sudo dnf install -y python39 python39-devel wget
 
 # Anonymize
 sudo dnf install -y poppler-utils mesa-libGL
@@ -28,6 +28,14 @@ if [ "${INSTALL_LIBREOFFICE}" != "" ]; then
     sudo dnf install *.rpm -y
     libreoffice24.8 --version
 fi 
+
+# Chrome + Selenium to get webpage
+if [ "${INSTALL_CHROME}" != "" ]; then
+   cd /tmp
+   wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+   sudo dnf localinstall -y google-chrome-stable_current_x86_64.rpm
+fi 
+cd $SCRIPT_DIR
 
 # Store the config in APEX
 export TNS_ADMIN=$HOME/db
