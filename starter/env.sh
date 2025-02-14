@@ -12,8 +12,8 @@ export TF_VAR_deploy_type="function"
 export TF_VAR_language="java"
 export TF_VAR_db_user="admin"
 # export TF_VAR_instance_shape="VM.Standard.E5.Flex"
-# Convert Office files to PDF using LibreOffice 
-# export INSTALL_LIBREOFFICE="true"
+# Convert Office files to PDF using LibreOffice (= Version to install)
+# export INSTALL_LIBREOFFICE="24.8.4"
 
 # TF_VAR_compartment_ocid : ocid1.compartment.xxxxx
 export TF_VAR_compartment_ocid="__TO_FILL__"

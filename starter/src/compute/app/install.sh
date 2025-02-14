@@ -19,7 +19,7 @@ sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
 # LibreOffice (convert docx to PDF)
-if [ "${INSTALL_LIBREOFFICE}" == "true" ]; then
+if [ "${INSTALL_LIBREOFFICE}" != "" ]; then
     cd /tmp
     export LIBREOFFICE_VERSION=24.8.4
     wget https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
