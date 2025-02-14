@@ -20,6 +20,7 @@ mv *.rpm /tmp
 
 # LibreOffice (convert docx to PDF)
 if [ "${INSTALL_LIBREOFFICE}" != "" ]; then
+    sudo dnf group install -y "Server with GUI"
     cd /tmp
     export LIBREOFFICE_VERSION=$INSTALL_LIBREOFFICE
     wget https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
@@ -27,13 +28,11 @@ if [ "${INSTALL_LIBREOFFICE}" != "" ]; then
     cd LibreOffice*/RPMS
     sudo dnf install *.rpm -y
     libreoffice24.8 --version
-fi 
 
-# Chrome + Selenium to get webpage
-if [ "${INSTALL_CHROME}" != "" ]; then
-   cd /tmp
-   wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
-   sudo dnf localinstall -y google-chrome-stable_current_x86_64.rpm
+    # Chrome + Selenium to get webpage
+    cd /tmp
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+    sudo dnf localinstall -y google-chrome-stable_current_x86_64.rpm
 fi 
 cd $SCRIPT_DIR
 
