@@ -4,12 +4,21 @@ import json
 import requests
 import oci
 from datetime import datetime
-import pdfkit
 from pathlib import Path
 from oci.object_storage.transfer.constants import MEBIBYTE
+
+# Anonymization
 import anonym_pdf
 from PIL import Image
 import subprocess
+
+# Sitemap
+import base64
+import pdfkit
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 # Constant
 LOG_DIR = '/tmp/app_log'
@@ -131,7 +140,7 @@ def cutInChunks(text):
             appendChunck( result2, text, chunck_start, c["char_end"] )
         return result2
 
-## -- embedText ------------------------------------------------------
+## -- embedText -------------------------------------------------------------
 
 # Ideally all vectors should be created in one call
 def embedText(c):
@@ -157,7 +166,7 @@ def embedText(c):
     log( "</embedText>")
     return dictString(j,"embeddings")[0] 
 
-## -- generateText ------------------------------------------------------
+## -- generateText ----------------------------------------------------------
 
 def generateText(prompt):
     global signer
@@ -193,7 +202,7 @@ def generateText(prompt):
     log( "</generateText>")
     return s
 
-## -- llama ------------------------------------------------------
+## -- llama_chat2 -----------------------------------------------------------
 
 def llama_chat2(prompt):
     global signer
@@ -241,6 +250,8 @@ def llama_chat2(prompt):
     log( "</llama_chat2>")
     return s
 
+## -- llama_chat ------------------------------------------------------------
+
 def llama_chat(messages):
     ## XXXX DOES NOT WORK XXXX ?
     global signer
@@ -281,7 +292,7 @@ def llama_chat(messages):
     log( "</llama_chat>")
     return s
 
-## -- chat ------------------------------------------------------
+## -- cohere_chat -----------------------------------------------------------
 
 def cohere_chat(prompt, chatHistory, documents):
     global signer
@@ -632,6 +643,58 @@ def documentUnderstanding(value):
         log_in_file("documentUnderstanding_resp",str(resp.data))
     log( "</documentUnderstanding>")
 
+## -- chrome_webdriver ---------------------------------------------------
+def chrome_webdriver():
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--window-size=1920x1080')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument("--disable-notifications")    
+    options.add_argument(f"--user-data-dir=/home/opc/chrome_profile")
+    settings = {
+        "recentDestinations": [{
+                "id": "Save as PDF",
+                "origin": "local",
+                "account": "",
+            }],
+            "selectedDestinationId": "Save as PDF",
+            "version": 2
+        }
+    prefs = {
+        'printing.print_preview_sticky_settings.appState': json.dumps(settings),
+        'savefile.default_directory': '/tmp/',
+        'download.default_directory': '/tmp/',
+        'plugins.plugins_disabled': "Chrome PDF Viewer",
+        'plugins.always_open_pdf_externally': "true"
+    }    
+    options.add_experimental_option('prefs', prefs)
+    options.add_argument('--kiosk-printing')  
+    driver = webdriver.Chrome(options=options)
+    return driver
+
+## -- chrome_download_url_as_pdf ---------------------------------------------------
+def chrome_download_url_as_pdf( driver, url, output_filename):
+    driver.get(url)
+    driver.implicitly_wait(15) 
+    try:
+        element_present = EC.presence_of_element_located((By.TAG_NAME, 'body'))
+        WebDriverWait(driver, 20).until(element_present) 
+    except Exception as e:
+        print(f"Error waiting for element: {e}")    
+
+    print_options = {
+        "marginsType": 1,         # Set margins (0 = default, 1 = no margins, 2 = minimal margins)
+        "printBackground": False  # Print background graphics
+    }
+    params = {'behavior': 'default', 'downloadPath': os.getcwd()} # Set the download directory to current working directory
+    driver.execute_cdp_cmd('Page.setDownloadBehavior', params) # Set the download path for the PDF
+    result = driver.execute_cdp_cmd("Page.printToPDF", print_options)
+    pdf_data = result['data']
+    with open(output_filename, "wb") as f:
+        f.write(bytes(base64.b64decode(pdf_data)))
+    log(f"<chrome_download_url_as_pdf> Saved {output_filename}")   
+
 ## -- sitemap ------------------------------------------------------------------
 def sitemap(value):
 
@@ -661,6 +724,8 @@ def sitemap(value):
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
 
+        if os.getenv("INSTALL_LIBREOFFICE"):
+            driver = chrome_webdriver()
         try:
             with open(file_name, 'r') as f:
                 for line in f:
@@ -682,8 +747,10 @@ def sitemap(value):
                         pdf_path = pdf_path.replace('/', '___');
                         pdf_path = pdf_path+'.pdf'
                         log("<sitemap>"+full_uri)
-                        pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
-                        log("<sitemap>Created: "+pdf_path)
+                        if os.getenv("INSTALL_LIBREOFFICE"):
+                            chrome_download_url_as_pdf( driver, full_uri, LOG_DIR+'/'+pdf_path)
+                        else:
+                            pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
     
                         metadata = {'customized_url_source': full_uri}
 
@@ -713,6 +780,8 @@ def sitemap(value):
             log("<sitemap>Error: File not found= "+file_name)
         except Exception as e:
             log("<sitemap>An unexpected error occurred: " + str(e))
+        if os.getenv("INSTALL_LIBREOFFICE"):    
+            driver.quit()            
     log( "</sitemap>")
 
 
@@ -858,7 +927,7 @@ def upload_agent_bucket(value, content=None, path=None):
            log("Exception: Delete failed: " + resourceGenAI)     
     log( "</upload_agent_bucket>")                      
 
-## -- genai_agent_datasource_ingest -----------------------------------------------------------
+## -- genai_agent_datasource_ingest -----------------------------------------
 
 def genai_agent_datasource_ingest():
 
@@ -877,10 +946,10 @@ def genai_agent_datasource_ingest():
         ))
     log( "</genai_agent_datasource_ingest>")             
 
-## -- office2pdf ------------------------------------------------------------------
+## -- libreoffice2pdf ------------------------------------------------------------
 
-def office2pdf(value):
-    log( "<office2pdf>")
+def libreoffice2pdf(value):
+    log( "<libreoffice2pdf>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -899,7 +968,7 @@ def office2pdf(value):
         stdout, stderr = p.communicate()
         pdf_file = str(Path(office_file).with_suffix('.pdf'))
         if os.path.exists(pdf_file):
-            log( f"<office2pdf> pdf found {pdf_file}")
+            log( f"<libreoffice2pdf> pdf found {pdf_file}")
         else:
             raise subprocess.SubprocessError(stderr)
         metadata = get_metadata_from_resource_id( resourceId )
@@ -910,14 +979,14 @@ def office2pdf(value):
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
         log( "Uploaded PDF "+resourceGenAI )
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<office2pdf> Delete")
+        log( "<libreoffice2pdf> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
-    log( "</office2pdf>")
+    log( "</libreoffice2pdf>")
 
-## -- download_file -------------------------------------------------------------------------------
+## -- download_file ---------------------------------------------------------
 
 def download_file(namespace,bucketName,resourceName):
     log( "<download_file>")
@@ -930,8 +999,9 @@ def download_file(namespace,bucketName,resourceName):
     log( "</download_file>")            
     return file_name
 
-## -- save_as_pdf -------------------------------------------------------------------------------------
-def save_as_pdf( file_name, images ):
+## -- save_image_as_pdf -----------------------------------------------------
+
+def save_image_as_pdf( file_name, images ):
     # Save image with PIL
     if len(images) == 1:
         images[0].save(file_name)
@@ -959,7 +1029,7 @@ def image2pdf(value, content=None, path=None):
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file)
         pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
-        save_as_pdf( pdf_file, [image] )         
+        save_image_as_pdf( pdf_file, [image] )         
 
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)

@@ -28,5 +28,8 @@ pdf2image
 Pillow
 opencv-python
 
-# Selenium
+# Selenium 
 selenium
+
+# sitemap.xml
+xmltodict

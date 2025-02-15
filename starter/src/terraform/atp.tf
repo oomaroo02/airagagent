@@ -4,13 +4,9 @@ resource "oci_database_autonomous_database" "starter_atp" {
   admin_password             = var.db_password
   compartment_id             = local.lz_db_cmp_ocid
   db_version                 = "23ai"  
-  cpu_core_count             = "1" 
-  data_storage_size_in_tbs   = "1"
-
-  # ECPU - Issue with LiveLab Green Button
-  # compute_model            = "ECPU"  
-  # compute_count            = "2"
-  # data_storage_size_in_gb  = "50" 
+  compute_model              = "ECPU"  
+  compute_count              = "2"
+  data_storage_size_in_gb    = "64" 
 
   # Random name to have several OCI Starter ATP named (starteratpxxxx) on the same Tenancy (Ex: livelabs)
   db_name                  = "${var.prefix}atp${random_string.id.result}"
@@ -22,7 +18,7 @@ resource "oci_database_autonomous_database" "starter_atp" {
   license_model                                  = var.license_model
   is_preview_version_with_service_terms_accepted = "false"
   # XXXXX  
-  #  whitelisted_ips                             = [ data.oci_core_vcn.starter_vcn.id ]
+  # whitelisted_ips                              = [ data.oci_core_vcn.starter_vcn.id ]
   # whitelisted_ips                              = [ "0.0.0.0/0" ]
   subnet_id                                      = data.oci_core_subnet.starter_db_subnet.id
   is_mtls_connection_required                    = false
