@@ -19,7 +19,7 @@ sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
 # LibreOffice (convert docx to PDF)
-if [ "${INSTALL_LIBREOFFICE}" != "" ]; then
+if [ "${INSTALL_LIBREOFFICE}" !="no" ]; then
     sudo dnf group install -y "Server with GUI"
     cd /tmp
     export LIBREOFFICE_VERSION=$INSTALL_LIBREOFFICE

@@ -38,7 +38,7 @@ def eventDocument(value):
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    shared_oci.image2pdf(value)
     #    return    
-    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt"] and os.getenv("INSTALL_LIBREOFFICE"):
+    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt"] and os.getenv("INSTALL_LIBREOFFICE")!="no":
         shared_oci.libreoffice2pdf(value)
         return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:

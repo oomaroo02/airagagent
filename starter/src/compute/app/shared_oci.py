@@ -724,7 +724,7 @@ def sitemap(value):
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
 
-        if os.getenv("INSTALL_LIBREOFFICE"):
+        if os.getenv("INSTALL_LIBREOFFICE")!="no":
             driver = chrome_webdriver()
         try:
             with open(file_name, 'r') as f:
@@ -747,7 +747,7 @@ def sitemap(value):
                         pdf_path = pdf_path.replace('/', '___');
                         pdf_path = pdf_path+'.pdf'
                         log("<sitemap>"+full_uri)
-                        if os.getenv("INSTALL_LIBREOFFICE"):
+                        if os.getenv("INSTALL_LIBREOFFICE")!="no":
                             chrome_download_url_as_pdf( driver, full_uri, LOG_DIR+'/'+pdf_path)
                         else:
                             pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
@@ -780,7 +780,7 @@ def sitemap(value):
             log("<sitemap>Error: File not found= "+file_name)
         except Exception as e:
             log("<sitemap>An unexpected error occurred: " + str(e))
-        if os.getenv("INSTALL_LIBREOFFICE"):    
+        if os.getenv("INSTALL_LIBREOFFICE")!="no":    
             driver.quit()            
     log( "</sitemap>")
 
