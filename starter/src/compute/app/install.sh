@@ -7,7 +7,7 @@ cd $SCRIPT_DIR
 function download()
 {
    echo "Downloading - $1"
-   wget -n $1
+   wget -nv $1
 }
 
 # Python 
