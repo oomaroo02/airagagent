@@ -20,6 +20,8 @@ export TF_VAR_compartment_ocid="__TO_FILL__"
 # TF_VAR_db_password : Min length 12 characters, 2 lowercase, 2 uppercase, 2 numbers, 2 special characters. Ex: LiveLab__12345
 #   If not filled, it will be generated randomly during the first build.
 export TF_VAR_db_password="__TO_FILL__"
+# TF_VAR_auth_token : See doc: https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm
+export TF_VAR_auth_token="__TO_FILL__"
 
 if [ -f $HOME/.oci_starter_profile ]; then
   . $HOME/.oci_starter_profile
