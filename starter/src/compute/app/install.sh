@@ -4,6 +4,12 @@ cd $SCRIPT_DIR
 
 . ./env.sh
 
+function download()
+{
+   echo "Downloading - $1"
+   wget -n $1
+}
+
 # Python 
 sudo dnf install -y python39 python39-devel wget
 
@@ -14,7 +20,7 @@ sudo pip3.9 install pip --upgrade
 pip3.9 install -r requirements.txt
 
 # PDFKIT
-wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
+wget -nv https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
@@ -23,7 +29,7 @@ if [ "${INSTALL_LIBREOFFICE}" != "no" ]; then
     sudo dnf group install -y "Server with GUI"
     cd /tmp
     export LIBREOFFICE_VERSION=$INSTALL_LIBREOFFICE
-    wget https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
+    download https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
     tar -xzvf LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
     cd LibreOffice*/RPMS
     sudo dnf install *.rpm -y
@@ -32,7 +38,7 @@ if [ "${INSTALL_LIBREOFFICE}" != "no" ]; then
 
     # Chrome + Selenium to get webpage
     cd /tmp
-    wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+    download https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
     sudo dnf localinstall -y google-chrome-stable_current_x86_64.rpm
 fi 
 cd $SCRIPT_DIR

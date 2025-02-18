@@ -6,6 +6,7 @@ import oci
 from datetime import datetime
 from pathlib import Path
 from oci.object_storage.transfer.constants import MEBIBYTE
+import urllib.parse
 
 # Anonymization
 import anonym_pdf
@@ -861,22 +862,18 @@ def decodeJson(value):
 def get_metadata_from_resource_id( resourceId ):
     region = os.getenv("TF_VAR_region")
     customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
-    log( "customized_url_source="+customized_url_source )
     return get_upload_metadata( customized_url_source )
 
-## -- get_upload_metadata ------------------------------------------------------------------
-def has_non_ascii(input_string):
-    return not all(ord(char) < 128 for char in input_string)
+## -- has_non_latin1 ------------------------------------------------------------------
+def has_non_latin1(input_string):
+    return not all(ord(char) < 255 for char in input_string)
 
 ## -- get_upload_metadata ------------------------------------------------------------------
 
 def get_upload_metadata( customized_url_source ):
-    # Very bad trick if the string is already encoded...
-    if has_non_ascii( customized_url_source ):
-        # Bug in metadata (Python bug.?) Very very bad work-around
-        int_list = list(customized_url_source.encode('utf-8'))
-        # Convert the list of integers to a string
-        customized_url_source = ''.join(chr(x) for x in int_list)
+    log( "customized_url_source="+customized_url_source )
+    customized_url_source = urllib.parse.quote(customized_url_source, safe=':/', encoding=None, errors=None)
+    log( "After encoding="+customized_url_source )
     return {'customized_url_source': customized_url_source}
 
 ## -- upload_agent_bucket ------------------------------------------------------------------
@@ -946,6 +943,25 @@ def genai_agent_datasource_ingest():
         ))
     log( "</genai_agent_datasource_ingest>")             
 
+
+import os
+import shutil
+
+## -- find_executable_path --------------------------------------------------------
+
+def find_executable_path(executable_prefix):
+    path_dirs = os.environ.get("PATH", "").split(os.pathsep)  # Split by ; or :
+    for path_dir in path_dirs:
+        try:
+            for filename in os.listdir(path_dir):
+                if filename.startswith(executable_prefix):
+                    full_path = os.path.join(path_dir, filename)
+                    if os.path.isfile(full_path) and os.access(full_path, os.X_OK): # Check if it's executable
+                        return str(full_path)
+        except:
+            continue
+    return None  # Executable not found
+
 ## -- libreoffice2pdf ------------------------------------------------------------
 
 def libreoffice2pdf(value):
@@ -962,7 +978,9 @@ def libreoffice2pdf(value):
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         office_file = download_file( namespace, bucketName, resourceName)
-        cmd = 'libreoffice24.8 --convert-to pdf --outdir'.split() + [LOG_DIR, office_file]
+        libreoffice_exe = find_executable_path("libreoffice")
+        log( f'libreoffice_exe=f{libreoffice_exe}' )
+        cmd = [ libreoffice_exe ] + '--convert-to pdf --outdir'.split() + [LOG_DIR, office_file]
         p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         p.wait(timeout=30)
         stdout, stderr = p.communicate()
