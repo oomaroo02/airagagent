@@ -27,7 +27,8 @@ if [ "${INSTALL_LIBREOFFICE}" != "no" ]; then
     tar -xzvf LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
     cd LibreOffice*/RPMS
     sudo dnf install *.rpm -y
-    libreoffice24.8 --version
+    export LIBRE_OFFICE_EXE=`find ${PATH//:/ } -maxdepth 1 -executable -name 'libreoffice*' | grep "libreoffice"`
+    echo LIBRE_OFFICE_EXE=$LIBRE_OFFICE_EXE
 
     # Chrome + Selenium to get webpage
     cd /tmp
