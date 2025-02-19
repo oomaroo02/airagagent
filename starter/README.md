@@ -1,3 +1,10 @@
+# Releases notes
+- 2025-02-19: 
+    - Fix for non-latin1 files and customized_url_source 
+    - LibreOffice (.doc, . docx, .ppt, .pttx -> pdf) enabled as default
+    - Chrome+Selenium enabled enabled as default 
+    - Remove the auth_token and replace by oci raw-request
+
 ## OCI-Starter
 ### Usage 
 
