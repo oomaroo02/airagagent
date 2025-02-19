@@ -14,7 +14,7 @@ def remove_entities(anonym_pdf_file, j):
         # images[idx] = images[idx].convert('RGB')
         draw_boxes(images[idx], pages_boxes[idx])
     pdf_file = anonym_pdf_file.replace(".anonym.pdf", ".pdf")    
-    shared_oci.save_as_pdf( pdf_file, images )  
+    shared_oci.save_image_as_pdf( pdf_file, images )  
     shared_oci.log( "</remove_entities> pdf_file created: "+ pdf_file )
     return pdf_file
 
@@ -129,4 +129,4 @@ if __name__ == "__main__":
             (width/2, height/2, 10, 10)
         ]
         draw_boxes( image, boxes)
-    shared_oci.save_as_pdf( "anonymize/temp.pdf", images)
+    shared_oci.save_image_as_pdf( "anonymize/temp.pdf", images)
