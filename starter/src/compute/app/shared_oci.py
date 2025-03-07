@@ -1084,12 +1084,12 @@ def webp2png(value, content=None, path=None):
         image.save(png_file, "png")        
 
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
         log( "Uploaded PNG "+resourceGenAI )
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<webp2png> Delete")
         try: 
-            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
     log( "</webp2png>")    
