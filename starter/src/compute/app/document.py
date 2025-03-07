@@ -38,7 +38,7 @@ def eventDocument(value):
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    shared_oci.image2pdf(value)
     #    return    
-    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt"] and os.getenv("INSTALL_LIBREOFFICE")!="no":
+    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt"] and shared_oci.libreoffice_exe!=None:
         shared_oci.libreoffice2pdf(value)
         return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
@@ -48,6 +48,10 @@ def eventDocument(value):
     elif resourceExtension in [".sitemap"]:
         # This will create a PDFs file in Object Storage with the content of each site (line) ".sitemap" 
         shared_oci.sitemap(value)
+        return
+    elif resourceExtension in [".webp"]:
+        # Convert webp to PNG
+        shared_oci.webp2png(value)
         return
     elif resourceExtension in [".srt"]:
         log("IGNORE .srt")
@@ -61,7 +65,7 @@ def eventDocument(value):
         if resourceExtension in [".json"]:
             result = shared_oci.decodeJson(value)
         elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
-             result = shared_oci.vision(value)
+            result = shared_oci.vision(value)
         else:
             result = shared_oci.invokeTika(value)
 

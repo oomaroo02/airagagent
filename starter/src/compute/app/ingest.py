@@ -69,16 +69,14 @@ def stream_loop(client, stream_id, initial_cursor):
 ociMessageEndpoint = os.getenv('STREAM_MESSAGE_ENDPOINT')
 ociStreamOcid = os.getenv('STREAM_OCID')
 
-# stream_client = oci.streaming.StreamClient(config, service_endpoint=ociMessageEndpoint)
-stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared_oci.signer)
-
-# A cursor can be created as part of a consumer group.
-# Committed offsets are managed for the group, and partitions
-# are dynamically balanced amongst consumers in the group.
-
 while True:
-    shared_db.initDbConn()
-    group_cursor = stream_cursor(stream_client, ociStreamOcid, "app-group", "app-instance-1")
-    stream_loop(stream_client, ociStreamOcid, group_cursor)
-    shared_db.closeDbConn()
-    time.sleep(30)
+    stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared_oci.signer)
+    try:
+        while True:
+            shared_db.initDbConn()
+            group_cursor = stream_cursor(stream_client, ociStreamOcid, "app-group", "app-instance-1")
+            stream_loop(stream_client, ociStreamOcid, group_cursor)
+            shared_db.closeDbConn()
+            time.sleep(30)
+    except:
+        log("<main>Exception in streamloop")

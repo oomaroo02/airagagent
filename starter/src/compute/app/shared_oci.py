@@ -21,6 +21,22 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+## -- find_executable_path --------------------------------------------------------
+
+def find_executable_path(executable_prefix):
+    path_dirs = os.environ.get("PATH", "").split(os.pathsep)  # Split by ; or :
+    for path_dir in path_dirs:
+        try:
+            for filename in os.listdir(path_dir):
+                if filename.startswith(executable_prefix):
+                    full_path = os.path.join(path_dir, filename)
+                    if os.path.isfile(full_path) and os.access(full_path, os.X_OK): # Check if it's executable
+                        return str(full_path)
+        except:
+            continue
+    return None  # Executable not found
+## --------------------------------------------------------------------------------
+
 # Constant
 LOG_DIR = '/tmp/app_log'
 UNIQUE_ID = "ID"
@@ -28,6 +44,7 @@ UNIQUE_ID = "ID"
 # Signer
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+libreoffice_exe = find_executable_path("libreoffice")
 
 # Create Log directory
 if os.path.isdir(LOG_DIR) == False:
@@ -213,7 +230,7 @@ def llama_chat2(prompt):
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": "meta.llama-3-70b-instruct",
+            "modelId": "meta.llama-3.3-70b-instruct",
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
@@ -795,6 +812,9 @@ def decodeJson(value):
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     
+    log(f"<decodeJson>resourceName={namespace}" )
+    log(f"<decodeJson>resourceName={bucketName}" )
+    log(f"<decodeJson>resourceName={resourceName}" )
     # Read the JSON file from the object storage
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
@@ -943,25 +963,6 @@ def genai_agent_datasource_ingest():
         ))
     log( "</genai_agent_datasource_ingest>")             
 
-
-import os
-import shutil
-
-## -- find_executable_path --------------------------------------------------------
-
-def find_executable_path(executable_prefix):
-    path_dirs = os.environ.get("PATH", "").split(os.pathsep)  # Split by ; or :
-    for path_dir in path_dirs:
-        try:
-            for filename in os.listdir(path_dir):
-                if filename.startswith(executable_prefix):
-                    full_path = os.path.join(path_dir, filename)
-                    if os.path.isfile(full_path) and os.access(full_path, os.X_OK): # Check if it's executable
-                        return str(full_path)
-        except:
-            continue
-    return None  # Executable not found
-
 ## -- libreoffice2pdf ------------------------------------------------------------
 
 def libreoffice2pdf(value):
@@ -978,8 +979,7 @@ def libreoffice2pdf(value):
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         office_file = download_file( namespace, bucketName, resourceName)
-        libreoffice_exe = find_executable_path("libreoffice")
-        log( f'libreoffice_exe=f{libreoffice_exe}' )
+        log( f'libreoffice_exe={libreoffice_exe}' )
         cmd = [ libreoffice_exe ] + '--convert-to pdf --outdir'.split() + [LOG_DIR, office_file]
         p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         p.wait(timeout=30)
@@ -1053,9 +1053,43 @@ def image2pdf(value, content=None, path=None):
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
         log( "Uploaded PDF "+resourceGenAI )
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<upload_agent_bucket> Delete")
+        log( "<image2pdf> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
     log( "</image2pdf>")
+
+## -- webp2png -----------------------------------------------------
+
+def webp2png(value, content=None, path=None):
+    log( "<webp2png>")
+    eventType = value["eventType"]
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+    resourceName = value["data"]["resourceName"]
+    resourceId = value["data"]["resourceId"]
+    resourceGenAI = resourceName+".png"
+  
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        # Set the original URL source (GenAI Agent)
+        metadata = get_metadata_from_resource_id( resourceId )
+
+        image_file = download_file( namespace, bucketName, resourceName)     
+        image = Image.open(image_file).convert("RGB")
+        png_file = LOG_DIR+"/"+UNIQUE_ID+".png"
+        image.save(png_file, "png")        
+
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
+        log( "Uploaded PNG "+resourceGenAI )
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
+        log( "<webp2png> Delete")
+        try: 
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI)
+        except:
+           log("Exception: Delete failed: " + resourceGenAI)   
+    log( "</webp2png>")    

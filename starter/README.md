@@ -1,4 +1,9 @@
 # Releases notes
+- 2025-03-07: 
+    - Upgraded libreoffice to 2.8.4.5
+    - LibreOffice (.doc, . docx, .ppt, .pttx -> pdf) if not installed default to default parser
+    - Catch errors if the streaming cursor is expired and recreate the connection (ex: when document understanding takes too much time, the streaming connection expires)
+    
 - 2025-02-19: 
     - Fix for non-latin1 files and customized_url_source 
     - LibreOffice (.doc, . docx, .ppt, .pttx -> pdf) enabled as default
