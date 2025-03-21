@@ -1,4 +1,6 @@
 # Releases notes
+- 2025-03-21: 
+    - Fix in the APEX app. When the response was bigger than 32K, the response was not shown.
 - 2025-03-07: 
     - Upgraded libreoffice to 2.8.4.5
     - LibreOffice (.doc, . docx, .ppt, .pttx -> pdf) if not installed default to default parser
