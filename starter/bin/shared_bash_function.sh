@@ -60,15 +60,13 @@ build_function() {
      fn bump
      export TF_VAR_fn_image=`grep "built successfully" $TARGET_DIR/fn_build.log | sed "s/Function //" | sed "s/ built successfully.//"`
      # Push the image to docker
-     oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${TF_VAR_ocir}/20180419/docker/token"  | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${TF_VAR_ocir}
-     # docker login ${TF_VAR_ocir} -u ${TF_VAR_namespace}/${TF_VAR_username} -p "${TF_VAR_auth_token}"
+     oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${TF_VAR_ocir}/20180419/docker/token" | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${TF_VAR_ocir}
      exit_on_error
      docker push $TF_VAR_fn_image
      exit_on_error
      # Store the image name and DB_URL in files
      echo $TF_VAR_fn_image > $TARGET_DIR/fn_image.txt
      echo "$1" > $TARGET_DIR/fn_db_url.txt
-     . ../../env.sh
   else 
      echo "build_function - built successfully not found"
      exit 1
@@ -77,8 +75,8 @@ build_function() {
   # First create the Function using terraform
   # Run env.sh to get function image 
   cd $PROJECT_DIR
-  . env.sh 
-  src/terraform/apply.sh --auto-approve
+  . starter.sh env 
+  $BIN_DIR/terraform_apply.sh --auto-approve
 }
 
 # Create KUBECONFIG file
@@ -89,7 +87,8 @@ create_kubeconfig() {
 
 ocir_docker_push () {
   # Docker Login
-  oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${TF_VAR_ocir}/20180419/docker/token"  | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${TF_VAR_ocir}
+  oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${TF_VAR_ocir}/20180419/docker/token" | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${TF_VAR_ocir}
+  exit_on_error
   echo DOCKER_PREFIX=$DOCKER_PREFIX
 
   # Push image in registry
@@ -97,14 +96,16 @@ ocir_docker_push () {
     docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
     docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
     exit_on_error
+    echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest" > $TARGET_DIR/docker_image_app.txt
   fi
 
   # Push image in registry
-  if [ -n "$(docker images -q ${TF_VAR_prefix}-ui 2> /dev/null)" ]; then
+  if [ -d $PROJECT_DIR/src/ui ]; then
     docker tag ${TF_VAR_prefix}-ui ${DOCKER_PREFIX}/${TF_VAR_prefix}-ui:latest
     docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-ui:latest
+    exit_on_error
+    echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-ui:latest" > $TARGET_DIR/docker_image_ui.txt
   fi
-  exit_on_error
 }
 
 replace_db_user_password_in_file() {
@@ -268,19 +269,19 @@ get_user_details() {
 
 # Get the user interface URL
 get_ui_url() {
-  if [ "$TF_VAR_deploy_type" == "compute" ]; then
+  if [ "$TF_VAR_deploy_type" == "public_compute" ] || [ "$TF_VAR_deploy_type" == "private_compute" ] ; then
     if [ "$TF_VAR_tls" != "" ] && [ "$TF_VAR_tls" == "existing_ocid" ]; then
       # xx APEX ? xx
       export UI_URL=https://${TF_VAR_dns_name}/${TF_VAR_prefix}
     else 
-      if [ "$TF_VAR_db_install" == "shared_compute" ]; then
+      if [ "$TF_VAR_deploy_type" == "public_compute" ]; then
         export UI_URL=http://${COMPUTE_IP}
       else 
         export UI_URL=https://${APIGW_HOSTNAME}/${TF_VAR_prefix}
       fi    
       if [ "$TF_VAR_tls" != "" ] && [ "$TF_VAR_certificate_ocid" != "" ]; then
         export UI_HTTP=$UI_URL
-        if [ "$TF_VAR_db_install" == "shared_compute" ]; then
+        if [ "$TF_VAR_deploy_type" == "public_compute" ]; then
             export UI_URL=https://${TF_VAR_dns_name}
         else 
             export UI_URL=https://${TF_VAR_dns_name}/${TF_VAR_prefix}
@@ -311,7 +312,7 @@ get_ui_url() {
 }
 
 is_deploy_compute() {
-  if [ "$TF_VAR_deploy_type" == "compute" ] || [ "$TF_VAR_deploy_type" == "instance_pool" ]; then
+  if [ "$TF_VAR_deploy_type" == "public_compute" ] || [ "$TF_VAR_deploy_type" == "private_compute" ] || [ "$TF_VAR_deploy_type" == "instance_pool" ]; then
     return 0
   else
     return 1
@@ -528,7 +529,7 @@ certificate_dir_before_terraform() {
     export TF_VAR_certificate_dir=$PROJECT_DIR/src/tls/$TF_VAR_dns_name
   fi
 
-  if [ "$TF_VAR_deploy_type" == "compute" ]; then
+  if [ "$TF_VAR_deploy_type" == "public_compute" ] || [ "$TF_VAR_deploy_type" == "private_compute" ]; then
     if [ -d target/compute/certificate ]; then
       echo "Certificate Directory exists already" 
     elif [ "$TF_VAR_certificate_dir" != "" ]; then
@@ -561,7 +562,7 @@ certificate_dir_before_terraform() {
 # Certificate - Post Deploy
 certificate_post_deploy() {
   if [ "$TF_VAR_tls" == "new_http_01" ]; then
-    if [ "$TF_VAR_deploy_type" == "compute" ]; then
+    if [ "$TF_VAR_deploy_type" == "public_compute" ] || [ "$TF_VAR_deploy_type" == "private_compute" ]; then
       certificate_run_certbot_http_01
     elif [ "$TF_VAR_deploy_type" == "kubernetes" ]; then
       echo "Skip: TLS - Kubernetes - HTTP_01"
@@ -569,7 +570,7 @@ certificate_post_deploy() {
   elif [ "$TF_VAR_deploy_type" == "kubernetes"  ]; then
     # Set the TF_VAR_ingress_ip
     get_ui_url 
-    src/terraform/apply.sh --auto-approve -no-color
+    $BIN_DIR/terraform_apply.sh --auto-approve -no-color
     exit_on_error
   fi  
 }

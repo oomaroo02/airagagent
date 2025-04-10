@@ -1,9 +1,7 @@
 #!/bin/bash
-PROJECT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-export BIN_DIR=$PROJECT_DIR/bin
 
 # Env Variables
-export TF_VAR_prefix="agext"
+export TF_VAR_prefix="ag2"
 
 export TF_VAR_ui_type="html"
 export TF_VAR_db_type="autonomous"
@@ -29,8 +27,6 @@ fi
 
 # Creation Details
 export OCI_STARTER_CREATION_DATE=2024-06-01-18-11-43-021126
-export OCI_STARTER_VERSION=2.0
+export OCI_STARTER_VERSION=3.4
 export OCI_STARTER_PARAMS="prefix,java_framework,java_vm,java_version,ui_type,db_type,license_model,mode,infra_as_code,db_password,oke_type,deploy_type,language"
 
-# Get other env variables automatically (-silent flag can be passed)
-. $BIN_DIR/auto_env.sh $1

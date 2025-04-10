@@ -3,7 +3,7 @@ export SRC_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pw
 export ROOT_DIR=${SRC_DIR%/*}
 cd $ROOT_DIR
 
-. ./env.sh
+. ./starter.sh env
 
 get_attribute_from_tfstate "STREAM_OCID" "starter_stream" "id"
 get_attribute_from_tfstate "TENANCY_NAME" "tenant_details" "name"
