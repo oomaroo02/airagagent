@@ -16,3 +16,4 @@ resource "oci_identity_policy" "starter_search_policy" {
     ]
 }
 
+

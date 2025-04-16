@@ -2,6 +2,7 @@
 ### Usage 
 
 ### Commands
+- starter.sh         : Show the menu
 - starter.sh help    : Show the list of commands
 - starter.sh build   : Build the whole program: Run Terraform, Configure the DB, Build the App, Build the UI
 - starter.sh destroy : Destroy the objects created by Terraform
@@ -20,9 +21,8 @@ Help (Tutorial + How to customize): https://www.ocistarter.com/help
 - Edit the file env.sh. Some variables need to be filled:
 ```
 export TF_VAR_db_password="__TO_FILL__"
-export TF_VAR_auth_token="__TO_FILL__"
 ```
 
 - Run:
-  cd agent
-  ./starter.sh build
+  cd agext
+  ./starter.sh
