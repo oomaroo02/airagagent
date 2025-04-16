@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Env Variables
-export TF_VAR_prefix="ag2"
+export TF_VAR_prefix="agext"
 
 export TF_VAR_ui_type="html"
 export TF_VAR_db_type="autonomous"
