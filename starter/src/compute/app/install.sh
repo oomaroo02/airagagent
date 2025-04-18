@@ -29,7 +29,8 @@ if [ "${INSTALL_LIBREOFFICE}" != "no" ]; then
     sudo dnf group install -y "Server with GUI"
     cd /tmp
     export STABLE_VERSIONS=`curl -s https://download.documentfoundation.org/libreoffice/stable/`
-    export LIBREOFFICE_VERSION=`echo $STABLE_VERSIONS | grep "<td" | tail -n 1 | sed 's/.*href="//' | sed 's/\/".*//'`
+    export LIBREOFFICE_VERSION=`echo $STABLE_VERSIONS | sed 's/.*<td valign="top">//' | sed 's/\/<\/a>.*//' | sed 's/.*\/">//'`
+    echo LIBREOFFICE_VERSION=$LIBREOFFICE_VERSION
 
     download https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
     tar -xzvf LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
