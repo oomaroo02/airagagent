@@ -23,18 +23,16 @@ from selenium.webdriver.common.by import By
 
 ## -- find_executable_path --------------------------------------------------------
 
-def find_executable_path(executable_prefix):
-    path_dirs = os.environ.get("PATH", "").split(os.pathsep)  # Split by ; or :
-    for path_dir in path_dirs:
+def find_executable_path(prefix):
+    for path in os.environ['PATH'].split(os.pathsep):
         try:
-            for filename in os.listdir(path_dir):
-                if filename.startswith(executable_prefix):
-                    full_path = os.path.join(path_dir, filename)
-                    if os.path.isfile(full_path) and os.access(full_path, os.X_OK): # Check if it's executable
-                        return str(full_path)
+            for filename in os.listdir(path):
+                if filename.startswith(prefix) and os.access(os.path.join(path, filename), os.X_OK) and os.path.isfile(os.path.join(path, filename)):
+                   return os.path.join(path, filename)
         except:
             continue
-    return None  # Executable not found
+    return None
+
 ## --------------------------------------------------------------------------------
 
 # Constant
