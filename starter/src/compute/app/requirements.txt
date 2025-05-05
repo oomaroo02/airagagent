@@ -2,6 +2,11 @@
 Flask
 flask-cors
 
+# FastAPI
+waitress
+uvicorn[standard]   
+fastapi
+
 #DB23ai
 oracledb
 
@@ -33,3 +38,4 @@ selenium
 
 # sitemap.xml
 xmltodict
+
