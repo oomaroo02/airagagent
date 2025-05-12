@@ -10,7 +10,7 @@ logging.basicConfig( format='%(asctime)s %(levelname)-8s %(message)s', level=log
 #----------------------------------------------------------------------------
 
 @app.get("/hello")
-def hello(operation: str):
+def hello():
     """
     Hello World.
 
