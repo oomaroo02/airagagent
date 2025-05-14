@@ -24,22 +24,22 @@
             "type": "Music"
         }
     },
-    "DocumentUnderstanding.pdf": {
+    "oracle/DocumentUnderstanding.pdf": {
         "metadataAttributes": {
             "type": "Oracle"
         }
     },
-    "Oracle Cloud Infrastructure Summary.pdf": {
+    "oracle/Oracle Cloud Infrastructure Summary.pdf": {
         "metadataAttributes": {
             "type": "Oracle"
         }
     },
-    "What is Oracle Analytics.mp4": {
+    "oracle/What is Oracle Analytics.mp4": {
         "metadataAttributes": {
             "type": "Oracle"
         }
     },
-    "Why Oracle for AI.pdf": {
+    "oracle/Why Oracle for AI.pdf": {
         "metadataAttributes": {
             "type": "Oracle"
         }
