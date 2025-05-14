@@ -879,7 +879,7 @@ def decodeJson(value):
 ## -- get_metadata_from_resource_id --------------------------------------------------------
 def get_metadata_from_resource_id( resourceId ):
     region = os.getenv("TF_VAR_region")
-    folder = os.path.dirname( resourceId );
+    folder = os.path.dirname( resourceId )
     customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
     return get_upload_metadata( customized_url_source, folder )
 
@@ -922,7 +922,8 @@ def upload_agent_bucket(value, content=None, path=None):
         region = os.getenv("TF_VAR_region")
         customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
         log( "customized_url_source="+customized_url_source )
-        metadata = get_upload_metadata( customized_url_source )
+        folder = os.path.dirname( path )
+        metadata = get_upload_metadata( customized_url_source, folder )
 
         file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
         if not content:
