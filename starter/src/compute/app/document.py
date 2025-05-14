@@ -31,7 +31,7 @@ def eventDocument(value):
         # This will create a JSON file in Object Storage that will create a second even with resourceExtension "json" 
         shared_oci.documentUnderstanding(value)
         return
-    elif resourceExtension in [".pdf", ".txt", ".csv", ".md"]:
+    elif resourceExtension in [".pdf", ".txt", ".csv", ".md", ""] or resourceName in ["_metadata_schema.json", "_all.metadata.json"] :
         # Simply copy the file to the agent bucket
         shared_oci.upload_agent_bucket(value)
         return

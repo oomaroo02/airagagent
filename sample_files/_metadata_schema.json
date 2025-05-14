@@ -1,0 +1,8 @@
+{
+    "metadataSchema": [
+        {
+            "name": "type",
+            "type": "string"
+        }
+    ]
+}

@@ -67,3 +67,6 @@ EOT
 
 export TNS_ADMIN=$HOME/db
 sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @import_application.sql
+
+# Install Dept/Emp for SQL agent
+sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @dept_emp.sql

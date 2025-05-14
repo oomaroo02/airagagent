@@ -1,0 +1,47 @@
+{
+    "country.pdf": {
+        "metadataAttributes": {
+            "type": "Music"
+        }
+    },
+    "dance.pdf": {
+        "metadataAttributes": {
+            "type": "Music"
+        }
+    },
+    "disco.pdf": {
+        "metadataAttributes": {
+            "type": "Music"
+        }
+    },
+    "rock.pdf": {
+        "metadataAttributes": {
+            "type": "Music"
+        }
+    },
+    "jazz.pdf": {
+        "metadataAttributes": {
+            "type": "Music"
+        }
+    },
+    "DocumentUnderstanding.pdf": {
+        "metadataAttributes": {
+            "type": "Oracle"
+        }
+    },
+    "Oracle Cloud Infrastructure Summary.pdf": {
+        "metadataAttributes": {
+            "type": "Oracle"
+        }
+    },
+    "What is Oracle Analytics.mp4": {
+        "metadataAttributes": {
+            "type": "Oracle"
+        }
+    },
+    "Why Oracle for AI.pdf": {
+        "metadataAttributes": {
+            "type": "Oracle"
+        }
+    }
+}
