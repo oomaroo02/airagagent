@@ -3,6 +3,10 @@
         {
             "name": "type",
             "type": "string"
+        },
+        {
+            "name": "folder",
+            "type": "string"
         }
     ]
 }

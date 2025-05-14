@@ -1,25 +1,25 @@
 {
-    "country.pdf": {
+    "music/country.pdf": {
         "metadataAttributes": {
             "type": "Music"
         }
     },
-    "dance.pdf": {
+    "music/dance.pdf": {
         "metadataAttributes": {
             "type": "Music"
         }
     },
-    "disco.pdf": {
+    "music/disco.pdf": {
         "metadataAttributes": {
             "type": "Music"
         }
     },
-    "rock.pdf": {
+    "music/rock.pdf": {
         "metadataAttributes": {
             "type": "Music"
         }
     },
-    "jazz.pdf": {
+    "music/jazz.pdf": {
         "metadataAttributes": {
             "type": "Music"
         }
