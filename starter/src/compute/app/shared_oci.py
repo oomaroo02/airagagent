@@ -879,8 +879,9 @@ def decodeJson(value):
 ## -- get_metadata_from_resource_id --------------------------------------------------------
 def get_metadata_from_resource_id( resourceId ):
     region = os.getenv("TF_VAR_region")
+    folder = os.path.dirname( resourceId );
     customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
-    return get_upload_metadata( customized_url_source )
+    return get_upload_metadata( customized_url_source, folder )
 
 ## -- has_non_latin1 ------------------------------------------------------------------
 def has_non_latin1(input_string):
@@ -888,11 +889,14 @@ def has_non_latin1(input_string):
 
 ## -- get_upload_metadata ------------------------------------------------------------------
 
-def get_upload_metadata( customized_url_source ):
+def get_upload_metadata( customized_url_source, folder ):
     log( "customized_url_source="+customized_url_source )
     customized_url_source = urllib.parse.quote(customized_url_source, safe=':/', encoding=None, errors=None)
     log( "After encoding="+customized_url_source )
-    return {'customized_url_source': customized_url_source}
+    log( "folder="+folder )
+    # Add folder metadata
+    # See https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/RAG-tool-object-storage-guidelines.htm
+    return {'customized_url_source': customized_url_source, 'gaas-metadata-filtering-field-folder': folder}
 
 ## -- upload_agent_bucket ------------------------------------------------------------------
 
@@ -1084,6 +1088,7 @@ def webp2png(value, content=None, path=None):
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
         log( "Uploaded PNG "+resourceGenAI )
+        metadataFolder( upload_manager, namespace, bucketName, resourceGenAI )
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<webp2png> Delete")
         try: 

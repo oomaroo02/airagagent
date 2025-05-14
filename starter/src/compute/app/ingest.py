@@ -80,3 +80,4 @@ while True:
             time.sleep(30)
     except:
         log("<main>Exception in streamloop")
+        log(traceback.format_exc())

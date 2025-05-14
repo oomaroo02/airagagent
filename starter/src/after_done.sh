@@ -38,8 +38,8 @@ echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
 # Deploy compute simplified
 mkdir -p $TARGET_DIR/compute/.
 cp -r src/compute/* $TARGET_DIR/compute/.
-if [ -f $TARGET_DIR/compute/app/starter.sh env ]; then 
-  file_replace_variables $TARGET_DIR/compute/app/starter.sh env
+if [ -f $TARGET_DIR/compute/app/env.sh ]; then 
+  file_replace_variables $TARGET_DIR/compute/app/env.sh
 fi 
 scp -r -o StrictHostKeyChecking=no -i $TF_VAR_ssh_private_path $TARGET_DIR/compute/* opc@$BASTION_IP:/home/opc/.
 ssh -o StrictHostKeyChecking=no -i $TF_VAR_ssh_private_path opc@$BASTION_IP "export TF_VAR_language=python;export AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID;export AGENT_DATASOURCE_OCID=$AGENT_DATASOURCE_OCID;export FN_INVOKE_ENDPOINT=\"$FN_INVOKE_ENDPOINT\";export FN_OCID=\"$FN_OCID\";export STREAM_MESSAGE_ENDPOINT=\"$STREAM_MESSAGE_ENDPOINT\";export STREAM_OCID=\"$STREAM_OCID\";export DB_USER=\"$TF_VAR_db_user\";export DB_PASSWORD=\"$TF_VAR_db_password\";export DB_URL=\"$DB_URL\"; bash compute_bootstrap.sh 2>&1 | tee -a compute_bootstrap.log"
