@@ -1,3 +1,3 @@
 target
 src/terraform/.terraform
-src/terraform/.terraform.lock.hcl
+src/terraform/.terraform.lock.hcl\norig

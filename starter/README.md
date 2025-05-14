@@ -24,5 +24,5 @@ export TF_VAR_db_password="__TO_FILL__"
 ```
 
 - Run:
-  cd agext
+  cd agtmp2
   ./starter.sh

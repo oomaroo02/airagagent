@@ -26,7 +26,9 @@ if [ -f $HOME/.oci_starter_profile ]; then
 fi
 
 # Creation Details
-export OCI_STARTER_CREATION_DATE=2024-06-01-18-11-43-021126
-export OCI_STARTER_VERSION=3.4
+export OCI_STARTER_CREATION_DATE=2025-05-14-16-21-43-942355
+export OCI_STARTER_VERSION=3.7
 export OCI_STARTER_PARAMS="prefix,java_framework,java_vm,java_version,ui_type,db_type,license_model,mode,infra_as_code,db_password,oke_type,deploy_type,language"
+
+
 
