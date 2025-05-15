@@ -1,6 +1,7 @@
 import streamlit as st
 import oci
 import os
+import json
 from streamlit_spinner import spinner
 import urllib
 
@@ -128,19 +129,62 @@ else:
 
         # Display agent response
         if execute_session_response.status == 200:
-            response_content = execute_session_response.data.message.content
-            st.session_state.messages.append({"role": "assistant", "content": response_content.text})
-            with st.chat_message("assistant"):
-                st.markdown(response_content.text)
-            
-            # Display citations
-            if response_content.citations:
-                with st.expander(translations[lang_code]["citations"]):  # Collapsible section
-                    for i, citation in enumerate(response_content.citations, start=1):
-                        source_url = citation.source_location.url.replace( " ", "%20" )
-                        # st.write(f"**Citation {i}:**")  # Add citation number
-                        st.write(f"**{translations[lang_code]['citation']} {i}:**") 
-                        st.markdown(f"**{translations[lang_code]['source']}:** [{source_url}]({source_url})") 
-                        st.text_area(translations[lang_code]["citation_text"], value=citation.source_text, height=200) # Use st.text_area for better formatting
+            if execute_session_response.data.message:
+                response_content = execute_session_response.data.message.content
+                # print( str(response_content), flush=True )
+                if response_content.text.startswith( '{"generatedQuery"' ):
+                    response_sql = json.loads(response_content.text)
+                    print( str(response_sql), flush=True )
+                    data = response_sql["executionResult"]
+                    headers = list(data[0].keys())
+                    headers = list(data[0].keys())
+                    markdown_table = ""
+                    markdown_table += "| " + " | ".join(headers) + " |\n"
+                    markdown_table += "| " + " | ".join(["---"] * len(headers)) + " |\n"
+                    for item in data:
+                        row = "| "
+                        for header in headers:
+                            value = str(item.get(header, ""))  # Handle missing keys, convert to string
+                            row += value + " | "
+                        markdown_table += row + "\n"
+                    markdown_table.strip()         
+                    query = response_sql["generatedQuery"]    
+                    st.session_state.messages.append({"role": "assistant", "content": markdown_table})
+                    with st.chat_message("assistant"):
+                        st.markdown(markdown_table)   
+                    with st.expander("Query"):
+                        st.write(f"Query: {query}")                  
+                else:    
+                    st.session_state.messages.append({"role": "assistant", "content": response_content.text})
+                    with st.chat_message("assistant"):
+                        st.markdown(response_content.text)
+                    
+                    # Display citations
+                    if response_content.citations:
+                        with st.expander(translations[lang_code]["citations"]):  # Collapsible section
+                            for i, citation in enumerate(response_content.citations, start=1):
+                                source_url = citation.source_location.url.replace( " ", "%20" )
+                                # st.write(f"**Citation {i}:**")  # Add citation number
+                                st.write(f"**{translations[lang_code]['citation']} {i}:**") 
+                                st.markdown(f"**{translations[lang_code]['source']}:** [{source_url}]({source_url})") 
+                                st.text_area(translations[lang_code]["citation_text"], value=citation.source_text, height=200) # Use st.text_area for better formatting
+            else:
+                print( str(execute_session_response.data), flush=True )
+                function_call=execute_session_response.data.required_actions[0].function_call 
+                string_arguments = function_call.arguments
+                dict_arguments = json.loads(string_arguments)
+                print( str(dict_arguments), flush=True )
+                if dict_arguments["message"]:
+                    dict_message= json.loads(dict_arguments["message"])
+                    with st.chat_message("assistant"):
+                        st.session_state.messages.append({"role": "assistant", "content": dict_message["response"] })
+                        st.markdown(dict_message["response"])                        
+                else:
+                    with st.chat_message("assistant"):
+                        st.session_state.messages.append({"role": "assistant", "content": dict_arguments["response"] })
+                        st.markdown(dict_arguments["response"])                        
+                with st.expander("Tool"):    
+                    st.write(f"Tool: {function_call.name}")   
+                    st.write(f"Arguments: {function_call.arguments}")   
         else:
             st.error(f"API request failed with status: {execute_session_response.status}")
