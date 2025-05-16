@@ -53,8 +53,9 @@ resource "oci_generative_ai_agent_data_ingestion_job" "starter_agent_ingestion_j
 
 resource "oci_generative_ai_agent_agent" "starter_agent" {
   compartment_id                 = local.lz_serv_cmp_ocid
-  display_name                  = "${var.prefix}-agent"
-  description                   = "${var.prefix}-agent"
+  display_name                   = "${var.prefix}-agent"
+  description                    = "${var.prefix}-agent"
+  welcome_message                = "How can I help you ?"
   knowledge_base_ids = [
     oci_generative_ai_agent_knowledge_base.starter_agent_kb.id
   ]  
