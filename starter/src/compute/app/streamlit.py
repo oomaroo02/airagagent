@@ -174,15 +174,15 @@ else:
                 string_arguments = function_call.arguments
                 dict_arguments = json.loads(string_arguments)
                 print( str(dict_arguments), flush=True )
-                if dict_arguments["message"]:
-                    dict_message= json.loads(dict_arguments["message"])
+                if dict_arguments.get("message"):
+                    dict_message= json.loads(dict_arguments.get("message"))
                     with st.chat_message("assistant"):
-                        st.session_state.messages.append({"role": "assistant", "content": dict_message["response"] })
-                        st.markdown(dict_message["response"])                        
+                        st.session_state.messages.append({"role": "assistant", "content": dict_message.get("response") })
+                        st.markdown(dict_message.get("response"))                        
                 else:
                     with st.chat_message("assistant"):
-                        st.session_state.messages.append({"role": "assistant", "content": dict_arguments["response"] })
-                        st.markdown(dict_arguments["response"])                        
+                        st.session_state.messages.append({"role": "assistant", "content": dict_arguments.get("response") })
+                        st.markdown(dict_arguments.get("response"))                        
                 with st.expander("Tool"):    
                     st.write(f"Tool: {function_call.name}")   
                     st.write(f"Arguments: {function_call.arguments}")   
