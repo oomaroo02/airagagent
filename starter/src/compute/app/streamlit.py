@@ -181,7 +181,8 @@ else:
                     try: 
                         number1 = dict_arguments.get("number1")
                         number2 = dict_arguments.get("number2")
-                        message = 'ADD: ' + ( int(number1) + int(number2) )
+                        result = int(number1) + int(number2)
+                        message = f'ADD: {result}'
                     except:
                         message = f"Error call tool {tool_name} - {string_arguments}"
                 else:
