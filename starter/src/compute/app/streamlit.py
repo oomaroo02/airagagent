@@ -135,7 +135,7 @@ else:
                 if response_content.text.startswith( '{"generatedQuery"' ):
                     response_sql = json.loads(response_content.text)
                     print( str(response_sql), flush=True )
-                    data = response_sql["executionResult"]
+                    data = response_sql.get("executionResult")
                     headers = list(data[0].keys())
                     headers = list(data[0].keys())
                     markdown_table = ""
@@ -148,7 +148,7 @@ else:
                             row += value + " | "
                         markdown_table += row + "\n"
                     markdown_table.strip()         
-                    query = response_sql["generatedQuery"]    
+                    query = response_sql.get("generatedQuery")    
                     st.session_state.messages.append({"role": "assistant", "content": markdown_table})
                     with st.chat_message("assistant"):
                         st.markdown(markdown_table)   
@@ -171,18 +171,26 @@ else:
             else:
                 print( str(execute_session_response.data), flush=True )
                 function_call=execute_session_response.data.required_actions[0].function_call 
+                tool_name = function_call.name
+                print( 'Tool: ' + tool_name, flush=True )
                 string_arguments = function_call.arguments
                 dict_arguments = json.loads(string_arguments)
                 print( str(dict_arguments), flush=True )
-                if dict_arguments.get("message"):
-                    dict_message= json.loads(dict_arguments.get("message"))
-                    with st.chat_message("assistant"):
-                        st.session_state.messages.append({"role": "assistant", "content": dict_message.get("response") })
-                        st.markdown(dict_message.get("response"))                        
+        
+                if tool_name == 'add':
+                    try: 
+                        number1 = dict_arguments.get("number1")
+                        number2 = dict_arguments.get("number2")
+                        message = 'ADD: ' + ( int(number1) + int(number2) )
+                    except:
+                        message = f"Error call tool {tool_name} - {string_arguments}"
                 else:
-                    with st.chat_message("assistant"):
-                        st.session_state.messages.append({"role": "assistant", "content": dict_arguments.get("response") })
-                        st.markdown(dict_arguments.get("response"))                        
+                    message = f'Tool {tool_name} is not implemented'
+                    
+                with st.chat_message("assistant"):
+                        st.session_state.messages.append({"role": "assistant", "content": message })
+                        st.markdown(message)                        
+                  
                 with st.expander("Tool"):    
                     st.write(f"Tool: {function_call.name}")   
                     st.write(f"Arguments: {function_call.arguments}")   
