@@ -131,7 +131,7 @@ else:
         if execute_session_response.status == 200:
             if execute_session_response.data.message:
                 response_content = execute_session_response.data.message.content
-                # print( str(response_content), flush=True )
+                print( str(response_content), flush=True )                
                 if response_content.text.startswith( '{"generatedQuery"' ):
                     response_sql = json.loads(response_content.text)
                     print( str(response_sql), flush=True )
