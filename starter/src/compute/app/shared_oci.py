@@ -736,7 +736,7 @@ def sitemap(value):
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)            
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-        folder = os.path.dirname( '/' + resourceName.split("/o/",1)[1] )
+        folder = resourceName
         file_name = LOG_DIR+"/"+UNIQUE_ID+".sitemap"
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
