@@ -70,7 +70,10 @@ output "fn_url" {
   value = join("", oci_apigateway_deployment.starter_apigw_deployment.*.endpoint)
 }
 
+variable no_policy { default=null }
+
 resource "oci_identity_policy" "starter_fn_policy" {
+  count          = var.no_policy=="true" ? 0 : 1  
   provider       = oci.home    
   name           = "${var.prefix}-fn-policy"
   description    = "APIGW access Function"
