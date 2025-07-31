@@ -447,6 +447,7 @@ lunalab() {
       sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_instance_shape="VM.Standard.E5.Flex"' $PROJECT_DIR/env.sh      
       export TF_VAR_no_policy="true"      
       sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_no_policy="true"' $PROJECT_DIR/env.sh      
+      export SUPPRESS_LABEL_WARNING=True
     fi    
   fi 
 }

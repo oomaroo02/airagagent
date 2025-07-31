@@ -8,6 +8,7 @@ fi
 # TARGET_DIR
 export TARGET_DIR=$PROJECT_DIR/target
 export STATE_FILE=$TARGET_DIR/terraform.tfstate
+
 if [ ! -d $TARGET_DIR ]; then
   mkdir $TARGET_DIR
 fi
