@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+if command -v terraform  &> /dev/null; then
+  export TERRAFORM_COMMAND=terraform
+elif command -v tofu  &> /dev/null; then
+  export TERRAFORM_COMMAND=tofu
+else
+  error_exit "Command not found: terraform or tofu"
+fi   
+
+
 infra_as_code_plan() {
   cd $PROJECT_DIR/src/terraform    
   if [ "$TF_VAR_infra_as_code" == "resource_manager" ]; then
@@ -9,8 +18,8 @@ infra_as_code_plan() {
     if [ "$TF_VAR_infra_as_code" == "terraform_object_storage" ]; then
       sed "s/XX_TERRAFORM_STATE_URL_XX/$TF_VAR_terraform_state_url/g" terraform.template.tf > terraform/terraform.tf
     fi  
-    terraform init -no-color
-    terraform plan
+    $TERRAFORM_COMMAND init -no-color
+    $TERRAFORM_COMMAND plan
   fi
 }
 
@@ -24,8 +33,8 @@ infra_as_code_apply() {
     if [ "$TF_VAR_infra_as_code" == "terraform_object_storage" ]; then
       sed "s/XX_TERRAFORM_STATE_URL_XX/$TF_VAR_terraform_state_url/g" terraform.template.tf > terraform/terraform.tf
     fi  
-    terraform init -no-color -upgrade
-    terraform apply $@
+    $TERRAFORM_COMMAND init -no-color -upgrade
+    $TERRAFORM_COMMAND apply $@
     exit_on_error
   fi
 }
@@ -35,8 +44,8 @@ infra_as_code_destroy() {
   if [ "$TF_VAR_infra_as_code" == "resource_manager" ]; then
     resource_manager_destroy
   else
-    terraform init -upgrade
-    terraform destroy $@
+    $TERRAFORM_COMMAND init -upgrade
+    $TERRAFORM_COMMAND destroy $@
   fi
 }
 
