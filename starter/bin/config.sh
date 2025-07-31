@@ -49,6 +49,12 @@ if declare -p | grep -q "__TO_FILL__"; then
     done    
   }
 
+  # Livelabs Green Button (Autodetect compartment/vcn/subnet)
+  livelabs_green_button 
+
+  # LunaLab (Autodetect compartment)
+  lunalab
+
   # PREFIX
   if [ "$TF_VAR_prefix" == "__TO_FILL__" ]; then
     DEFAULT_PREFIX=starter
@@ -173,12 +179,6 @@ if declare -p | grep -q "__TO_FILL__"; then
     read -r -p "Enter the value of the API_KEY (ex: MY_long_KEY_123456) ? (TF_VAR_api_key) " TF_VAR_api_key 
     store_env_sh TF_VAR_api_key $TF_VAR_api_key
   fi  
-
-  # Livelabs Green Button (Autodetect compartment/vcn/subnet)
-  livelabs_green_button 
-
-  # LunaLab (Autodetect compartment)
-  lunalab
 
   # COMPARTMENT_ID
   if [ "$TF_VAR_compartment_ocid" == "__TO_FILL__" ]; then
