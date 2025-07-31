@@ -46,7 +46,7 @@ build_ui() {
 
 docker_login() {
   oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${TF_VAR_ocir}/20180419/docker/token" | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${TF_VAR_ocir}
-  exit_on_error
+  exit_on_error "Docker Login"
 }
 
 build_function() {
@@ -56,10 +56,10 @@ build_function() {
   fn update context oracle.compartment-id ${TF_VAR_compartment_ocid}
   fn update context api-url https://functions.${TF_VAR_region}.oraclecloud.com
   fn update context registry ${DOCKER_PREFIX}
-  # Set pipefail to get the error despite pip to tee
+  # Set pipefail to get the error despite pipe to tee
   set -o pipefail
   fn build -v | tee $TARGET_DIR/fn_build.log
-  exit_on_error
+  exit_on_error "build_function - fn build"
 
   if grep --quiet "built successfully" $TARGET_DIR/fn_build.log; then
      fn bump
@@ -68,20 +68,22 @@ build_function() {
      docker_login
      oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${TF_VAR_fn_image} 2>/dev/null
      docker push $TF_VAR_fn_image
-     exit_on_error
+     exit_on_error "build_function - docker push"
      # Store the image name and DB_URL in files
      echo $TF_VAR_fn_image > $TARGET_DIR/fn_image.txt
-     echo "$1" > $TARGET_DIR/fn_db_url.txt
   else 
      echo "build_function - built successfully not found"
      exit 1
   fi 
 
-  # First create the Function using terraform
-  # Run env.sh to get function image 
-  cd $PROJECT_DIR
-  . starter.sh env 
-  $BIN_DIR/terraform_apply.sh --auto-approve
+  if [ "$CALLED_BY_TERRAFORM" == "" ]; then
+    # First create the Function using terraform
+    # Run env.sh to get function image 
+    cd $PROJECT_DIR
+    . starter.sh env 
+    $BIN_DIR/terraform_apply.sh --auto-approve
+    exit_on_error "build_function - terraform apply"
+  fi
 }
 
 # Create KUBECONFIG file
@@ -100,7 +102,7 @@ ocir_docker_push () {
     docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
     oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-app 2>/dev/null
     docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
-    exit_on_error
+    exit_on_error "docker push APP"
     echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest" > $TARGET_DIR/docker_image_app.txt
   fi
 
@@ -109,7 +111,7 @@ ocir_docker_push () {
     docker tag ${TF_VAR_prefix}-ui ${DOCKER_PREFIX}/${TF_VAR_prefix}-ui:latest
     oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-ui 2>/dev/null
     docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-ui:latest
-    exit_on_error
+    exit_on_error "docker push UI"
     echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-ui:latest" > $TARGET_DIR/docker_image_ui.txt
   fi
 }
@@ -117,9 +119,11 @@ ocir_docker_push () {
 replace_db_user_password_in_file() {
   # Replace DB_USER DB_PASSWORD
   CONFIG_FILE=$1
-  sed -i "s/##DB_USER##/$TF_VAR_db_user/" $CONFIG_FILE
-  sed -i "s/##DB_PASSWORD##/$TF_VAR_db_password/" $CONFIG_FILE
-  sed -i "s%##JDBC_URL##%$JDBC_URL%" $CONFIG_FILE
+  if [ -f $CONFIG_FILE ]; then 
+    sed -i "s/##DB_USER##/$TF_VAR_db_user/" $CONFIG_FILE
+    sed -i "s/##DB_PASSWORD##/$TF_VAR_db_password/" $CONFIG_FILE
+    sed -i "s%##JDBC_URL##%$JDBC_URL%" $CONFIG_FILE
+  fi
 }  
 
 error_exit() {
@@ -141,11 +145,10 @@ error_exit() {
 exit_on_error() {
   RESULT=$?
   if [ $RESULT -eq 0 ]; then
-    echo "Success"
+    echo "Success - $1"
   else
-    echo
-    echo "EXIT ON ERROR - HISTORY"
-    history 2
+    title "EXIT ON ERROR - HISTORY - $1 "
+    history 2 | cut -c1-256
     error_exit "Command Failed (RESULT=$RESULT)"
   fi  
 }
@@ -173,10 +176,14 @@ get_id_from_tfstate () {
   set_if_not_null $1 $RESULT
 }
 
-
 get_output_from_tfstate () {
-  RESULT=`jq -r '.outputs."'$2'".value' $STATE_FILE | sed "s/ //"`
-  set_if_not_null $1 $RESULT
+  output=$1
+  if [ "${!output}" != "" ]; then
+    echo "XXXXXX get_output_from_tfstate $1=${!output}"
+  else 
+    RESULT=`jq -r '.outputs."'$2'".value' $STATE_FILE | sed "s/ //"`
+    set_if_not_null $1 $RESULT
+  fi
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
@@ -216,25 +223,61 @@ find_availabilty_domain_for_shape() {
   exit 1
 }
 
+# Guess the shape E6/E5/E4
+guess_available_shape() {
+  if [ -f $TARGET_DIR/shape.json ]; then  
+    export TF_VAR_instance_shape=`cat $TARGET_DIR/shape.json`
+    echo "Reading shape from $TARGET_DIR/shape.json ($TF_VAR_instance_shape)"
+  else
+    echo "Searching for compute shape..."  
+    i=1
+    for ad in `oci iam availability-domain list --compartment-id=$TF_VAR_tenancy_ocid | jq -r ".data[].name"` 
+    do
+        oci compute shape list --compartment-id=$TF_VAR_tenancy_ocid --availability-domain $ad > $TARGET_DIR/shapes.json
+        for s in VM.Standard.E6.Flex VM.Standard.E5.Flex VM.Standard.E4.Flex; do
+        TEST=`cat $TARGET_DIR/shapes.json | jq ".data[] | select( .shape==\"$s\" )"`
+        if [[ "$TEST" != "" ]]; then
+            echo "Found Shape $s in $ad"
+            export TF_VAR_instance_shape=$s
+            echo $TF_VAR_instance_shape > $TARGET_DIR/shape.json
+            return 0
+        fi
+        done  
+        i=$((i+1))
+    done
+    error_exit "Error no shape not found" 
+  fi
+}
+
 # Get User Details (username and OCID)
 get_user_details() {
   if [ "$OCI_CLI_CLOUD_SHELL" == "True" ];  then
-    # Cloud Shell
-    export TF_VAR_tenancy_ocid=$OCI_TENANCY
-    export TF_VAR_region=$OCI_REGION
-    # Needed for child region
-    export TF_VAR_home_region=`echo $OCI_CS_HOST_OCID | awk -F[/.] '{print $4}'`
-    if [[ "$OCI_CS_USER_OCID" == *"ocid1.saml2idp"* ]]; then
-      # Ex: ocid1.saml2idp.oc1..aaaaaaaaexfmggau73773/user@domain.com -> oracleidentitycloudservice/user@domain.com
-      # Split the string in 2 
-      IFS='/' read -r -a array <<< "$OCI_CS_USER_OCID"
-      IDP_NAME=`oci iam identity-provider get --identity-provider-id=${array[0]} | jq -r .data.name`
-      IDP_NAME_LOWER=${IDP_NAME,,}
-      export TF_VAR_username="$IDP_NAME_LOWER/${array[1]}"
-    elif [[ "$OCI_CS_USER_OCID" == *"ocid1.user"* ]]; then
-      export TF_VAR_user_ocid="$OCI_CS_USER_OCID"
+    if [ "$OCI_TENANCY" != "" ]; then 
+      # Cloud Shell
+      export TF_VAR_tenancy_ocid=$OCI_TENANCY
+      export TF_VAR_region=$OCI_REGION
+      # Needed for child region
+      export TF_VAR_home_region=`echo $OCI_CS_HOST_OCID | awk -F[/.] '{print $4}'`
+      if [[ "$OCI_CS_USER_OCID" == *"ocid1.saml2idp"* ]]; then
+        # Ex: ocid1.saml2idp.oc1..aaaaaaaaexfmggau73773/user@domain.com -> oracleidentitycloudservice/user@domain.com
+        # Split the string in 2 
+        IFS='/' read -r -a array <<< "$OCI_CS_USER_OCID"
+        IDP_NAME=`oci iam identity-provider get --identity-provider-id=${array[0]} | jq -r .data.name`
+        IDP_NAME_LOWER=${IDP_NAME,,}
+        export TF_VAR_username="$IDP_NAME_LOWER/${array[1]}"
+      elif [[ "$OCI_CS_USER_OCID" == *"ocid1.user"* ]]; then
+        export TF_VAR_current_user_ocid="$OCI_CS_USER_OCID"
+      else 
+        export TF_VAR_username=$OCI_CS_USER_OCID
+      fi
     else 
-      export TF_VAR_username=$OCI_CS_USER_OCID
+      echo "Called From Resource Manager"
+      export CALLED_BY_TERRAFORM="TRUE"
+      export TF_VAR_ssh_private_path=$TARGET_DIR/ssh_key_starter
+      echo "$TF_VAR_ssh_public_key" > ${TF_VAR_ssh_private_path}.pub
+      echo "$TF_VAR_ssh_private_key" > $TF_VAR_ssh_private_path
+      chmod 600 ${TF_VAR_ssh_private_path}.pub
+      chmod 600 $TF_VAR_ssh_private_path
     fi
   elif [ -f $HOME/.oci/config ]; then
     ## Get the [DEFAULT] config
@@ -244,14 +287,14 @@ get_user_details() {
       OCI_PRO=$OCI_CLI_PROFILE
     fi    
     sed -n -e "/\[$OCI_PRO\]/,$$p" $HOME/.oci/config > /tmp/ociconfig
-    export TF_VAR_user_ocid=`sed -n 's/user=//p' /tmp/ociconfig |head -1`
+    export TF_VAR_current_user_ocid=`sed -n 's/user=//p' /tmp/ociconfig |head -1`
     export TF_VAR_fingerprint=`sed -n 's/fingerprint=//p' /tmp/ociconfig |head -1`
     export TF_VAR_private_key_path=`sed -n 's/key_file=//p' /tmp/ociconfig |head -1`
     export TF_VAR_home_region=`sed -n 's/region=//p' /tmp/ociconfig |head -1`
     # XX maybe get region from 169.xxx ?
     export TF_VAR_region=$TF_VAR_home_region
     export TF_VAR_tenancy_ocid=`sed -n 's/tenancy=//p' /tmp/ociconfig |head -1`  
-    # echo TF_VAR_user_ocid=$TF_VAR_user_ocid
+    # echo TF_VAR_current_user_ocid=$TF_VAR_current_user_ocid
     # echo TF_VAR_fingerprint=$TF_VAR_fingerprint
     # echo TF_VAR_private_key_path=$TF_VAR_private_key_path
   elif [ "$OCI_AUTH" == "ResourcePrincipal" ]; then
@@ -262,21 +305,21 @@ get_user_details() {
     export TF_VAR_region=$OCI_RESOURCE_PRINCIPAL_REGION
   fi
 
-  # Find TF_VAR_username based on TF_VAR_user_ocid or the opposite
+  # Find TF_VAR_username based on TF_VAR_current_user_ocid or the opposite
   # In this order, else this is not reentrant. "oci iam user list" require more privileges.  
-  if [ "$TF_VAR_user_ocid" != "" ]; then
-    export TF_VAR_username=`oci iam user get --user-id $TF_VAR_user_ocid | jq -r '.data.name'`
+  if [ "$TF_VAR_current_user_ocid" != "" ]; then
+    export TF_VAR_username=`oci iam user get --user-id $TF_VAR_current_user_ocid | jq -r '.data.name'`
   elif [ "$TF_VAR_username" != "" ]; then
-    export TF_VAR_user_ocid=`oci iam user list --name $TF_VAR_username | jq -r .data[0].id`
+    export TF_VAR_current_user_ocid=`oci iam user list --name $TF_VAR_username | jq -r .data[0].id`
   fi  
   auto_echo TF_VAR_username=$TF_VAR_username
-  auto_echo TF_VAR_user_ocid=$TF_VAR_user_ocid
+  auto_echo TF_VAR_current_user_ocid=$TF_VAR_current_user_ocid
 }
 
 # Get the user interface URL
 get_ui_url() {
   if [ "$TF_VAR_deploy_type" == "public_compute" ] || [ "$TF_VAR_deploy_type" == "private_compute" ] ; then
-    if [ "$TF_VAR_tls" != "" ] && [ "$TF_VAR_tls" == "existing_ocid" ]; then
+    if [ "$TF_VAR_dns_name" != "" ] && [ "$TF_VAR_tls" == "existing_ocid" ]; then
       # xx APEX ? xx
       export UI_URL=https://${TF_VAR_dns_name}/${TF_VAR_prefix}
     else 
@@ -302,6 +345,9 @@ get_ui_url() {
       export UI_URL=https://${TF_VAR_dns_name}
     fi
   elif [ "$TF_VAR_deploy_type" == "kubernetes" ]; then
+    if [ ! -f $KUBECONFIG ]; then
+      create_kubeconfig  
+    fi 
     export TF_VAR_ingress_ip=`kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath="{.status.loadBalancer.ingress[0].ip}"`
     export UI_URL=http://${TF_VAR_ingress_ip}/${TF_VAR_prefix}
     if [ "$TF_VAR_tls" != "" ] && [ "$TF_VAR_dns_name" != "" ]; then
@@ -386,11 +432,23 @@ livelabs_green_button() {
     fi  
     
     # LiveLabs support only E4 Shapes
-    # if grep -q '# export TF_VAR_instance_shape=VM.Standard.E4.Flex' $PROJECT_DIR/env.sh; then
-    #   sed -i "s&# export TF_VAR_instance_shape=&export TF_VAR_instance_shape=&" $PROJECT_DIR/env.sh
-    # fi
-
+    sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_instance_shape="VM.Standard.E4.Flex"' $PROJECT_DIR/env.sh
+    export TF_VAR_instance_shape=VM.Standard.E4.Flex
   fi
+}
+
+lunalab() {
+  if grep -q 'export TF_VAR_compartment_ocid="__TO_FILL__"' $PROJECT_DIR/env.sh; then    
+    if [ "$USER" == "luna.user" ]; then
+      echo "LunaLab - Luna User detected"
+      export TF_VAR_compartment_ocid=$OCI_COMPARTMENT_OCID
+      sed -i "s&export TF_VAR_compartment_ocid=\"__TO_FILL__\"&export TF_VAR_compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/env.sh      
+      export TF_VAR_instance_shape="VM.Standard.E5.Flex"
+      sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_instance_shape="VM.Standard.E5.Flex"' $PROJECT_DIR/env.sh      
+      export TF_VAR_no_policy="true"      
+      sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_no_policy="true"' $PROJECT_DIR/env.sh      
+    fi    
+  fi 
 }
 
 create_deployment_in_apigw() {
@@ -508,7 +566,7 @@ certificate_create() {
   else
     oci certs-mgmt certificate update-certificate-by-importing-config-details --certificate-id=$TF_VAR_certificate_ocid --cert-chain-pem="$CERT_CHAIN" --certificate-pem="$CERT_CERT"  --private-key-pem="$CERT_PRIVKEY" --wait-for-state ACTIVE --wait-for-state FAILED
   fi
-  exit_on_error
+  exit_on_error "oci certs-mgmt"
   TF_VAR_certificate_ocid=`oci certs-mgmt certificate list --all --compartment-id $TF_VAR_compartment_ocid --name $TF_VAR_dns_name | jq -r .data.items[0].id`
 }
 
@@ -531,7 +589,7 @@ certificate_dir_before_terraform() {
   elif [ "$TF_VAR_tls" == "new_dns_01" ]; then
     # Create a new certificate via DNS-01
     $BIN_DIR/tls_dns_create.sh 
-    exit_on_error
+    exit_on_error "tls_dns_create"
     export TF_VAR_certificate_dir=$PROJECT_DIR/src/tls/$TF_VAR_dns_name
   fi
 
@@ -577,7 +635,7 @@ certificate_post_deploy() {
     # Set the TF_VAR_ingress_ip
     get_ui_url 
     $BIN_DIR/terraform_apply.sh --auto-approve -no-color
-    exit_on_error
+    exit_on_error "certificate_post_deploy - terraform apply"
   fi  
 }
 
