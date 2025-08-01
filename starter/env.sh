@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Env Variables
-export TF_VAR_prefix="agext"
+# Prefix ex: agext
+export TF_VAR_prefix="__TO_FILL__"
 
 export TF_VAR_ui_type="html"
 export TF_VAR_db_type="autonomous"
