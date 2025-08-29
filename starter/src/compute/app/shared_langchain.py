@@ -15,8 +15,8 @@ from typing import List, Tuple
 
 # Globals
 embeddings = OCIGenAIEmbeddings(
-    model_id="cohere.embed-multilingual-v3.0",
-    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+    model_id="cohere.embed-v4.0",
+    service_endpoint="https://inference.generativeai.me-riyadh-1.oci.oraclecloud.com",
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"
 )

@@ -164,12 +164,12 @@ def embedText(c):
     global signer
     log( "<embedText>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/embedText'
+    endpoint = 'https://inference.generativeai.me-riyadh-1.oci.oraclecloud.com/20231130/actions/embedText'
     body = {
         "inputs" : [ c ],
         "servingMode" : {
             "servingType" : "ON_DEMAND",
-            "modelId" : "cohere.embed-multilingual-v3.0"
+            "modelId" : "cohere.embed-v4.0"
         },
         "truncate" : "START",
         "compartmentId" : compartmentId
